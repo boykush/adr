@@ -38,7 +38,7 @@ adg --help
 
 ## 展望
 
-- [ ] fork で ADG の MCP サーバーを remote（HTTP）で動かせるようにする（進行中）
+- [x] fork で ADG の MCP サーバーを remote（HTTP）で動かせるようにする（[boykush/ad-guidance-tool#1](https://github.com/boykush/ad-guidance-tool/pull/1)）
 - [ ] `adg` と決定を同梱した image（`ghcr.io/boykush/adr-mcp-server`）を GHCR へ公開する workflow を置く
 - [ ] infrastructure-as-code の remote-mcp-server に載せる
 - [ ] dotfiles のグローバル設定から参照させる
