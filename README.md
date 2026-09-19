@@ -18,6 +18,8 @@
 
 [ADG](https://github.com/adr/ad-guidance-tool)（Architectural Decision Guidance）で記録する。ADG は繰り返し現れる決定を扱う道具で、決定を `open` の決定点として起こし、選択肢と判断基準を並べてから確定させる。ファイル構成やコードの依存で検証できる決定は、[ADE](https://github.com/phi42/ad-enforcement-tool) の DSL で `.rule` に落として ADR と並べる。
 
+ADG の model は `decisions/`。`adg add --model decisions <タイトル>` のように、どのコマンドも `--model` でここを指す。
+
 ## セットアップ
 
 使うのは fork の [boykush/ad-guidance-tool](https://github.com/boykush/ad-guidance-tool)。リリースを切っていないので、`mise.toml` の `[bootstrap.repos]` で `.tools/` に clone し、そこから `adg` をビルドする。
