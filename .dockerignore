@@ -1,0 +1,3 @@
+# allowlist: image に入ってよいのは決定（decisions/）だけ。
+*
+!decisions

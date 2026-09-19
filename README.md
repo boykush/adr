@@ -37,10 +37,12 @@ adg --help
 
 - このリポジトリの責務は、`adg` と ADR・`.rule` を同梱した image を GHCR へ公開するまで
 - Kubernetes の manifest は置かない。infrastructure-as-code の `applications/remote-mcp-server/` に wiki と並べて載せる
+- image は `ghcr.io/boykush/adr-mcp-server`。`.github/workflows/adr-mcp-server-image.yml` が main への push で `main` と `<fork の ref 7桁>-<commit 7桁>` の2つの tag を push する
+- ENTRYPOINT は `adg mcp run --model decisions --http`。呼び出し側が渡すのは listen アドレスだけ（既定 `0.0.0.0:8080`）
 
 ## 展望
 
 - [x] fork で ADG の MCP サーバーを remote（HTTP）で動かせるようにする（[boykush/ad-guidance-tool#1](https://github.com/boykush/ad-guidance-tool/pull/1)）
-- [ ] `adg` と決定を同梱した image（`ghcr.io/boykush/adr-mcp-server`）を GHCR へ公開する workflow を置く
+- [x] `adg` と決定を同梱した image（`ghcr.io/boykush/adr-mcp-server`）を GHCR へ公開する workflow を置く
 - [ ] infrastructure-as-code の remote-mcp-server に載せる
 - [ ] dotfiles のグローバル設定から参照させる
