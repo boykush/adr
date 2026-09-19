@@ -1,0 +1,2 @@
+# fork の clone と、そこからビルドした adg（mise.toml の bootstrap が作る）
+.tools/
