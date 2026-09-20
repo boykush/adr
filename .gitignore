@@ -1,2 +1,2 @@
-# fork の clone と、mise のタスクがそこに置くビルド成果物（adg / adi）
+# mise の build タスクが adi を置く先
 .tools/

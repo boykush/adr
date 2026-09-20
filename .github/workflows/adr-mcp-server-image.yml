@@ -1,13 +1,16 @@
 name: Build and push adr-mcp-server image
 
-# image は決定を同梱するので、main への push で決定が変わるたびに作り直す。
-# mise.toml も対象なのは、image に入る adg の版（fork の ref）と Go の版をそこで決めているため。
+# image は決定と、それを配る adi の両方を同梱するので、どちらが変わっても作り直す。
+# mise.toml も対象なのは、image に入る Go の版をそこで決めているため。
 on:
   push:
     branches:
       - main
     paths:
       - "decisions/**"
+      - "adi/**"
+      - "go.mod"
+      - "go.sum"
       - "Dockerfile"
       - ".dockerignore"
       - "mise.toml"
@@ -17,14 +20,16 @@ on:
       - main
     # 決定を足してもビルドは壊れないので、PR では image の入力が変わったときだけ作る。
     paths:
+      - "adi/**"
+      - "go.mod"
+      - "go.sum"
       - "Dockerfile"
       - ".dockerignore"
       - "mise.toml"
       - ".github/workflows/adr-mcp-server-image.yml"
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 # 新しい決定を優先する。走り残った古い run が、古い `main` を公開しないように。
 concurrency:
@@ -52,25 +57,21 @@ jobs:
         id: meta
         run: |
           go_version=$(sed -n 's/^go *= *"\(.*\)"$/\1/p' mise.toml)
-          adg_ref=$(sed -n 's/.*ad-guidance-tool\.git", *ref *= *"\([0-9a-f]\{40\}\)".*/\1/p' mise.toml)
           : "${go_version:?go version not found in mise.toml}"
-          : "${adg_ref:?ad-guidance-tool ref not found in mise.toml}"
           {
             echo "go_version=${go_version}"
-            echo "adg_ref=${adg_ref}"
-            echo "tag=${adg_ref:0:7}-${GITHUB_SHA:0:7}"
+            echo "tag=${GITHUB_SHA:0:7}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Build
         env:
           GO_VERSION: ${{ steps.meta.outputs.go_version }}
-          ADG_REF: ${{ steps.meta.outputs.adg_ref }}
           TAG: ${{ steps.meta.outputs.tag }}
         run: |
           docker build \
             --platform linux/amd64 \
             --build-arg "GO_VERSION=${GO_VERSION}" \
-            --build-arg "ADG_REF=${ADG_REF}" \
+            --build-arg "VERSION=${TAG}" \
             --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
             --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
             --label "org.opencontainers.image.version=${TAG}" \
@@ -78,8 +79,8 @@ jobs:
             --tag "${IMAGE}:main" \
             .
 
-      # tool の呼び出しで image の両方の中身を確かめる。adg が HTTP で応答すること、
-      # 応答元の model が同梱されていること（無ければ list_adrs はエラーを返す）。
+      # tool の呼び出しで image の両方の中身を確かめる。adi が HTTP で応答すること、
+      # 応答元に決定が同梱されていること（無ければ decisions は空で返る）。
       # 2回目は、image の唯一の引数である listen アドレスの上書き。
       - name: Smoke test
         env:
@@ -91,12 +92,16 @@ jobs:
               if response=$(curl -fsS -X POST "http://127.0.0.1:$1/mcp" \
                    -H 'Content-Type: application/json' \
                    -H 'Accept: application/json, text/event-stream' \
-                   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_adrs","arguments":{}}}'); then
-                if grep -q '"result"' <<< "$response" && ! grep -q '"isError":true' <<< "$response"; then
-                  return 0
+                   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_decisions","arguments":{}}}'); then
+                if grep -q '"isError":true' <<< "$response"; then
+                  echo "list_decisions failed: ${response}" >&2
+                  return 1
                 fi
-                echo "unexpected response: ${response}" >&2
-                return 1
+                if ! grep -q '"adr_id"' <<< "$response"; then
+                  echo "no decisions were baked in: ${response}" >&2
+                  return 1
+                fi
+                return 0
               fi
               sleep 1
             done
@@ -120,7 +125,7 @@ jobs:
         run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
 
       # `main` は最新のビルドを追う側のための可変な参照。
-      # `<fork の ref>-<commit>` は、後からどのビルドかを特定するためのもの。
+      # `<commit>` は、後からどのビルドかを特定するためのもの。
       - name: Push
         if: github.ref == 'refs/heads/main'
         env:

@@ -1,3 +1,6 @@
-# allowlist: image に入ってよいのは決定（decisions/）だけ。
+# allowlist: image に入ってよいのは決定と、それを配る道具のソースだけ。
 *
 !decisions
+!adi
+!go.mod
+!go.sum

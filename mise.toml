@@ -5,20 +5,6 @@ golangci-lint = "2.13.1"
 [env]
 _.path = ["{{config_root}}/.tools/bin"]
 
-# fork はリリースを切っていないので、tool backend ではなく clone してビルドする。
-# fork の版を上げる場所はこの ref だけ。
-[bootstrap.repos]
-".tools/ad-guidance-tool" = { url = "https://github.com/boykush/ad-guidance-tool.git", ref = "e60d840d25b50c9689444d322521cb21674026ba" }
-
-# repos はグローバル設定の分（~/dotfiles）もマージされ、そちらが dirty だと丸ごと止まるので fork だけに絞る。
-# 成果物を clone の外に出すのは、未追跡ファイルがあると dirty 扱いで ref を動かせなくなるため。
-[tasks.bootstrap]
-description = "Clone the ad-guidance-tool fork and build adg"
-run = [
-  "mise bootstrap repos update --yes .tools/ad-guidance-tool",
-  'go -C .tools/ad-guidance-tool build -o "{{config_root}}/.tools/bin/adg" ./adg',
-]
-
 # CI（.github/workflows/ci.yml）と共有する検査。定義を1箇所に保ち、ずれないようにする。
 # まとめて走らせるのは `mise run check`。
 [tasks.fmt]
