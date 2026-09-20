@@ -1,0 +1,14 @@
+adr "0001" "Choose the project instruction file for coding agents"
+
+# .claude/CLAUDE.md も含め、どれか1つがあるだけで Claude Code は AGENTS.md を読まなくなる
+path "ClaudeMd"      = "**/CLAUDE.md"
+path "ClaudeLocalMd" = "**/CLAUDE.local.md"
+
+file "no_claude_md" {
+  ClaudeMd must not exist
+  ClaudeLocalMd must not exist
+  # worktree は別ブランチの checkout で、依存パッケージの中身はそのリポジトリの指示ではない
+  exclude ".claude/worktrees/**"
+  exclude "**/node_modules/**"
+  severity error
+}

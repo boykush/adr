@@ -35,6 +35,8 @@ Chosen option: "AGENTS.md だけを置き、CLAUDE.md は置かない", because 
 
 ### Confirmation
 
-`CLAUDE.md` と `CLAUDE.local.md` がリポジトリのどこにも無いこと。`.claude/CLAUDE.md` も含め、どれか1つあるだけで Claude Code は AGENTS.md を読まなくなる。
+隣の `.rule` が、この決定を ADE の DSL で言い直したもの。散文と違って主語を要求せず、走らせたリポジトリ自身について評価される。
 
-`.claude/worktrees/**` と `**/node_modules/**` は除く。worktree は別ブランチのチェックアウトで、依存パッケージの中身はそのリポジトリの指示ではない。
+```sh
+ade verify -i 0001-choose-the-project-instruction-file-for-coding-agents.rule -p fscheck
+```
