@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/boykush/adr/cmd"
+	"github.com/boykush/adr/adi/cmd"
 )
 
 func main() {

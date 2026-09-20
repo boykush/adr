@@ -49,7 +49,7 @@ run = "go mod tidy -diff"
 # ビルドした adi をこのリポジトリ自身に使えるため。
 [tasks.build]
 description = "Build adi"
-run = 'go build -o "{{config_root}}/.tools/bin/adi" .'
+run = 'go build -o "{{config_root}}/.tools/bin/adi" ./adi'
 
 [tasks.test]
 description = "Run tests with the race detector"
