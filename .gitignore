@@ -1,2 +1,2 @@
-# fork の clone と、そこからビルドした adg（mise.toml の bootstrap が作る）
+# mise の build タスクが adi を置く先
 .tools/
