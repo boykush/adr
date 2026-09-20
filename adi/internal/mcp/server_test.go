@@ -16,8 +16,9 @@ func newTestServer(t *testing.T) *Server {
 	t.Helper()
 	dir := t.TempDir()
 	files := map[string]string{
-		"0001-first.md":  "---\nstatus: accepted\n---\n\n# First\n\n## Context and Problem Statement\n\nthe first one\n",
-		"0002-second.md": "---\nstatus: proposed\n---\n\n# Second\n\n## Context and Problem Statement\n\nstill arguing\n",
+		"0001-first.md":   "---\nstatus: accepted\n---\n\n# First\n\n## Context and Problem Statement\n\nthe first one\n",
+		"0002-second.md":  "---\nstatus: proposed\n---\n\n# Second\n\n## Context and Problem Statement\n\nstill arguing\n",
+		"0001-first.rule": "adr \"0001\" \"First\"\n\nfile \"x\" {\n  severity error\n}\n",
 	}
 	for name, body := range files {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o600); err != nil {
@@ -101,6 +102,14 @@ func TestEndToEnd(t *testing.T) {
 	if list.Decisions[1].Status != "proposed" {
 		t.Errorf("second status = %q, want proposed", list.Decisions[1].Status)
 	}
+	// rule_path in the listing says which constraints have a machine-readable
+	// form, without carrying any of them.
+	if list.Decisions[0].RulePath != "0001-first.rule" {
+		t.Errorf("first rule_path = %q", list.Decisions[0].RulePath)
+	}
+	if list.Decisions[1].RulePath != "" {
+		t.Errorf("second rule_path = %q, want empty", list.Decisions[1].RulePath)
+	}
 
 	for _, id := range []string{"1", "0001", "ADR-0001"} {
 		res, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "get_decision", Arguments: map[string]any{"adr_id": id}})
@@ -113,6 +122,9 @@ func TestEndToEnd(t *testing.T) {
 		}
 		if got.ADRID != "ADR-0001" || !strings.Contains(got.Body, "the first one") {
 			t.Errorf("get_decision(%q) = %+v", id, got)
+		}
+		if !strings.Contains(got.Rule, "adr \"0001\"") {
+			t.Errorf("get_decision(%q).rule = %q", id, got.Rule)
 		}
 	}
 

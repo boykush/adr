@@ -24,6 +24,8 @@ const instructions = `adi serves a model of architectural decisions, written as 
 
 Call list_decisions at the start of a session, then get_decision for the ones that bear on the work at hand. Read the status before following a decision: only an accepted one binds the work, a proposed one is a decision still being argued and binds nothing, and a rejected, deprecated or superseded one says where the decision went.
 
+A decision may carry a rule file, returned as "rule": the same constraint written in ADE's rule DSL instead of prose. Prefer it when working out what the code has to satisfy. Prose has to name the repository it speaks about, because the decisions are kept in one place and the work happens in another; a rule names paths and assertions that are evaluated against whichever repository runs it, so it means the same thing in every repository this model serves.
+
 Cite a decision by its id wherever a constraint it imposes shows up outside this model -- a commit message, a pull request body, a code comment -- so a reader can find the reasoning behind the rule.
 
     good: // ADR-0001: the instructions live in AGENTS.md, so no CLAUDE.md here

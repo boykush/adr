@@ -93,3 +93,28 @@ func TestFindAcceptsEverySpelling(t *testing.T) {
 		t.Error("Find of an absent id returned no error")
 	}
 }
+
+func TestLoadPicksUpTheRuleBesideTheRecord(t *testing.T) {
+	dir := writeModel(t, map[string]string{
+		"0001-first.md":   decisionFile("accepted", "First"),
+		"0001-first.rule": "adr \"0001\" \"First\"\n",
+		"0002-second.md":  decisionFile("accepted", "Second"),
+	})
+
+	decisions, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if decisions[0].RulePath != "0001-first.rule" || !strings.Contains(decisions[0].Rule, "adr \"0001\"") {
+		t.Errorf("first rule = %q at %q", decisions[0].Rule, decisions[0].RulePath)
+	}
+	// A rule is optional, and its absence is the record that the decision has
+	// no machine-readable form -- not a missing file.
+	if decisions[1].Rule != "" || decisions[1].RulePath != "" {
+		t.Errorf("second carries a rule it should not: %+v", decisions[1])
+	}
+	// The rule is not itself a decision.
+	if len(decisions) != 2 {
+		t.Errorf("got %d decisions, want 2", len(decisions))
+	}
+}

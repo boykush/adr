@@ -15,4 +15,10 @@ type Decision struct {
 	// Path is relative to the model directory, so it reads the same to a client
 	// that has the repository checked out as it does to the server.
 	Path string
+	// Rule is the ADE rule file sitting beside the record, when there is one:
+	// the same constraint in machine-readable form. Prose has to name the
+	// repository it speaks about; a rule is evaluated against whichever one
+	// runs it, so it survives the trip to a consumer unchanged.
+	Rule     string
+	RulePath string
 }

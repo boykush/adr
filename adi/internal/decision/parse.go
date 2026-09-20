@@ -1,6 +1,7 @@
 package decision
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -37,7 +38,28 @@ func parseFile(path, name string) (Decision, error) {
 	if title == "" {
 		return Decision{}, fmt.Errorf("%s: no title; MADR puts it in the document's first heading", name)
 	}
-	return Decision{ID: id, Title: title, Status: h.Status, Body: body, Path: name}, nil
+	d := Decision{ID: id, Title: title, Status: h.Status, Body: body, Path: name}
+	if err := d.readRule(path, name); err != nil {
+		return Decision{}, err
+	}
+	return d, nil
+}
+
+// readRule picks up the ADE rule file named after the record. ADE and ADG both
+// keep it beside the decision it enforces, so the pairing is the filename and
+// needs nothing in the frontmatter to declare it.
+func (d *Decision) readRule(path, name string) error {
+	rulePath := strings.TrimSuffix(path, ".md") + ".rule"
+	data, err := os.ReadFile(rulePath)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	d.Rule = string(data)
+	d.RulePath = strings.TrimSuffix(name, ".md") + ".rule"
+	return nil
 }
 
 // splitFrontmatter separates a leading YAML block fenced by --- from the body.

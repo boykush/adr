@@ -13,11 +13,11 @@ import (
 func (s *Server) registerTools(srv *mcpsdk.Server) {
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "list_decisions",
-		Description: "List every architectural decision in the model as its id, title and status. Call this at the start of a session: it is small enough to read whole, and it is what says which decisions exist to ask about. Read any of them in full with get_decision.",
+		Description: "List every architectural decision in the model as its id, title and status, plus rule_path for the ones whose constraint also exists in machine-readable form. Call this at the start of a session: it is small enough to read whole, and it is what says which decisions exist to ask about. Read any of them in full with get_decision.",
 	}, s.listDecisions)
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "get_decision",
-		Description: "Read one decision in full, addressed by the id list_decisions gave. Returns what was decided together with the reasoning recorded alongside it. Check the status before following it: a decision that is still open binds nothing.",
+		Description: "Read one decision in full, addressed by the id list_decisions gave. Returns what was decided together with the reasoning recorded alongside it, and the decision's rule file when it has one. Check the status before following it: a decision that is still proposed binds nothing.",
 	}, s.getDecision)
 }
 
@@ -39,10 +39,12 @@ func (s *Server) getDecision(_ context.Context, _ *mcpsdk.CallToolRequest, in ge
 		return nil, getDecisionOutput{}, err
 	}
 	return nil, getDecisionOutput{
-		ADRID:  "ADR-" + d.ID,
-		Title:  d.Title,
-		Status: d.Status,
-		Path:   d.Path,
-		Body:   d.Body,
+		ADRID:    "ADR-" + d.ID,
+		Title:    d.Title,
+		Status:   d.Status,
+		Path:     d.Path,
+		Body:     d.Body,
+		Rule:     d.Rule,
+		RulePath: d.RulePath,
 	}, nil
 }
