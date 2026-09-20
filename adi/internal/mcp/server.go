@@ -20,13 +20,13 @@ const httpPath = "/mcp"
 // every session. They carry the two things the payloads cannot say on their
 // own: how to read a status, and how to cite a decision in work that outlives
 // the connection.
-const instructions = `adi serves a model of architectural decisions, read-only. The decisions are made and revised elsewhere; this server never changes them and exposes no tool that could.
+const instructions = `adi serves a model of architectural decisions, written as MADR records, read-only. The decisions are made and revised elsewhere; this server never changes them and exposes no tool that could.
 
-Call list_decisions at the start of a session, then get_decision for the ones that bear on the work at hand. Read the status before following a decision: a decided one binds the work, an open one is a decision point still being argued and binds nothing, and a superseded one names what replaced it.
+Call list_decisions at the start of a session, then get_decision for the ones that bear on the work at hand. Read the status before following a decision: only an accepted one binds the work, a proposed one is a decision still being argued and binds nothing, and a rejected, deprecated or superseded one says where the decision went.
 
 Cite a decision by its id wherever a constraint it imposes shows up outside this model -- a commit message, a pull request body, a code comment -- so a reader can find the reasoning behind the rule.
 
-    good: // AD0001: the instructions live in AGENTS.md, so no CLAUDE.md here
+    good: // ADR-0001: the instructions live in AGENTS.md, so no CLAUDE.md here
     bad:  // project convention`
 
 // Config locates the decision model. The server reads it per request rather

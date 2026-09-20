@@ -38,5 +38,5 @@ type getDecisionOutput struct {
 }
 
 func toSummary(d decision.Decision) decisionSummaryJSON {
-	return decisionSummaryJSON{ADRID: "AD" + d.ID, Title: d.Title, Status: d.Status, Path: d.Path}
+	return decisionSummaryJSON{ADRID: "ADR-" + d.ID, Title: d.Title, Status: d.Status, Path: d.Path}
 }

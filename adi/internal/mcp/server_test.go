@@ -16,8 +16,8 @@ func newTestServer(t *testing.T) *Server {
 	t.Helper()
 	dir := t.TempDir()
 	files := map[string]string{
-		"AD0001-first.md":  "---\nadr_id: \"0001\"\nstatus: decided\ntitle: First\n---\n\n## Decision\n\nthe first one\n",
-		"AD0002-second.md": "---\nadr_id: \"0002\"\nstatus: open\ntitle: Second\n---\n\n## Question\n\nstill arguing\n",
+		"0001-first.md":  "---\nstatus: accepted\n---\n\n# First\n\n## Context and Problem Statement\n\nthe first one\n",
+		"0002-second.md": "---\nstatus: proposed\n---\n\n# Second\n\n## Context and Problem Statement\n\nstill arguing\n",
 	}
 	for name, body := range files {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o600); err != nil {
@@ -64,7 +64,7 @@ func TestEndToEnd(t *testing.T) {
 
 	// The handshake is where the citation practice reaches the agent. The
 	// wording is free to change; that it arrives and names an id is not.
-	if got := cs.InitializeResult().Instructions; got == "" || !strings.Contains(got, "AD0001") {
+	if got := cs.InitializeResult().Instructions; got == "" || !strings.Contains(got, "ADR-0001") {
 		t.Errorf("instructions = %q, want non-empty and showing a cited id", got)
 	}
 
@@ -93,16 +93,16 @@ func TestEndToEnd(t *testing.T) {
 	if len(list.Decisions) != 2 {
 		t.Fatalf("decisions = %+v, want 2", list.Decisions)
 	}
-	if list.Decisions[0].ADRID != "AD0001" || list.Decisions[0].Status != "decided" {
+	if list.Decisions[0].ADRID != "ADR-0001" || list.Decisions[0].Status != "accepted" {
 		t.Errorf("first = %+v", list.Decisions[0])
 	}
 	// The listing carries status so an agent can tell a decision that binds from
 	// one still being argued, without reading either in full.
-	if list.Decisions[1].Status != "open" {
-		t.Errorf("second status = %q, want open", list.Decisions[1].Status)
+	if list.Decisions[1].Status != "proposed" {
+		t.Errorf("second status = %q, want proposed", list.Decisions[1].Status)
 	}
 
-	for _, id := range []string{"1", "0001", "AD0001"} {
+	for _, id := range []string{"1", "0001", "ADR-0001"} {
 		res, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "get_decision", Arguments: map[string]any{"adr_id": id}})
 		if err != nil {
 			t.Fatalf("call get_decision(%q): %v", id, err)
@@ -111,7 +111,7 @@ func TestEndToEnd(t *testing.T) {
 		if err := json.Unmarshal([]byte(contentText(res)), &got); err != nil {
 			t.Fatalf("decode get_decision(%q): %v", id, err)
 		}
-		if got.ADRID != "AD0001" || !strings.Contains(got.Body, "the first one") {
+		if got.ADRID != "ADR-0001" || !strings.Contains(got.Body, "the first one") {
 			t.Errorf("get_decision(%q) = %+v", id, got)
 		}
 	}

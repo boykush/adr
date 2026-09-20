@@ -44,5 +44,5 @@ func Find(dir, id string) (Decision, error) {
 			return d, nil
 		}
 	}
-	return Decision{}, fmt.Errorf("no decision AD%s in %s", want, dir)
+	return Decision{}, fmt.Errorf("no decision ADR-%s in %s", want, dir)
 }

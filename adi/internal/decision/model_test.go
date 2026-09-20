@@ -18,16 +18,18 @@ func writeModel(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-func decisionFile(id, status, title string) string {
-	return "---\nadr_id: \"" + id + "\"\nstatus: " + status + "\ntitle: " + title + "\n---\n\n## Decision\n\nbody of " + id + "\n"
+func decisionFile(status, title string) string {
+	return "---\nstatus: " + status + "\ndate: 2026-09-20\n---\n\n# " + title + "\n\n## Context and Problem Statement\n\nwhy\n"
 }
 
-func TestLoadOrdersByIDAndReadsOnlyMarkdown(t *testing.T) {
+func TestLoadOrdersByIDAndSkipsWhatIsNotADecision(t *testing.T) {
 	dir := writeModel(t, map[string]string{
-		"AD0002-b.md":   decisionFile("0002", "open", "Second"),
-		"AD0001-a.md":   decisionFile("0001", "decided", "First"),
-		"AD0001-a.rule": "adr \"0001\" \"First\"\n",
-		"index.yaml":    "decisions: {}\n",
+		"0002-second.md": decisionFile("proposed", "Second"),
+		"0001-first.md":  decisionFile("accepted", "First"),
+		// MADR numbers every decision, so an unnumbered file kept alongside is
+		// something else and must not fail the load.
+		"adr-template.md": "# Template\n",
+		"README.md":       "# How to write these\n",
 	})
 
 	decisions, err := Load(dir)
@@ -40,21 +42,21 @@ func TestLoadOrdersByIDAndReadsOnlyMarkdown(t *testing.T) {
 	if decisions[0].ID != "0001" || decisions[1].ID != "0002" {
 		t.Errorf("ids = %q, %q", decisions[0].ID, decisions[1].ID)
 	}
-	if decisions[0].Title != "First" || decisions[0].Status != "decided" {
+	if decisions[0].Title != "First" || decisions[0].Status != "accepted" {
 		t.Errorf("first = %+v", decisions[0])
 	}
-	if decisions[0].Path != "AD0001-a.md" {
+	if decisions[0].Path != "0001-first.md" {
 		t.Errorf("path = %q, want it relative to the model dir", decisions[0].Path)
 	}
-	if !strings.HasPrefix(decisions[0].Body, "## Decision") {
-		t.Errorf("body = %q, want the frontmatter stripped", decisions[0].Body)
+	if !strings.HasPrefix(decisions[0].Body, "# First") {
+		t.Errorf("body = %q, want the frontmatter stripped and the heading kept", decisions[0].Body)
 	}
 }
 
 func TestLoadRejectsDuplicateID(t *testing.T) {
 	dir := writeModel(t, map[string]string{
-		"AD0001-a.md": decisionFile("0001", "decided", "First"),
-		"AD0001-b.md": decisionFile("AD1", "open", "Also first"),
+		"0001-first.md":      decisionFile("accepted", "First"),
+		"0001-also-first.md": decisionFile("proposed", "Also first"),
 	})
 
 	_, err := Load(dir)
@@ -63,19 +65,21 @@ func TestLoadRejectsDuplicateID(t *testing.T) {
 	}
 }
 
-func TestLoadRejectsMissingID(t *testing.T) {
-	dir := writeModel(t, map[string]string{"stray.md": "---\ntitle: No id\n---\n\nbody\n"})
+func TestLoadRejectsMissingTitle(t *testing.T) {
+	dir := writeModel(t, map[string]string{
+		"0001-first.md": "---\nstatus: accepted\n---\n\n## Context and Problem Statement\n\nwhy\n",
+	})
 
 	_, err := Load(dir)
-	if err == nil || !strings.Contains(err.Error(), "adr_id") {
-		t.Fatalf("err = %v, want it to name the missing field", err)
+	if err == nil || !strings.Contains(err.Error(), "title") {
+		t.Fatalf("err = %v, want it to name the missing title", err)
 	}
 }
 
 func TestFindAcceptsEverySpelling(t *testing.T) {
-	dir := writeModel(t, map[string]string{"AD0001-a.md": decisionFile("0001", "decided", "First")})
+	dir := writeModel(t, map[string]string{"0001-first.md": decisionFile("accepted", "First")})
 
-	for _, id := range []string{"1", "0001", "AD0001", "ad0001"} {
+	for _, id := range []string{"1", "0001", "ADR-0001", "adr-0001"} {
 		d, err := Find(dir, id)
 		if err != nil {
 			t.Fatalf("Find(%q): %v", id, err)

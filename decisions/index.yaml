@@ -1,9 +1,0 @@
-decisions:
-    "0001":
-        adr_id: "0001"
-        title: Choose the project instruction file for coding agents
-        status: decided
-        comments:
-            - author: boykush
-              date: "2026-09-20 11:39:30"
-              comment: "1"

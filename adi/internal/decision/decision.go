@@ -1,11 +1,13 @@
-// Package decision reads the decision model: one Markdown file per decision,
-// with YAML frontmatter carrying the fields the surfaces address it by.
+// Package decision reads the decision model: one MADR file per decision, named
+// NNNN-title-with-dashes.md.
 package decision
 
 // Decision is one file in the model. Body is everything after the frontmatter,
-// kept verbatim -- what a decision says is its own prose, and this package does
-// not interpret its sections.
+// heading included, kept verbatim -- what a decision says is its own prose, and
+// this package does not interpret its sections.
 type Decision struct {
+	// ID is the four digits MADR puts at the front of the filename. Surfaces
+	// print it as ADR-NNNN, the form MADR itself uses to reference a decision.
 	ID     string
 	Title  string
 	Status string

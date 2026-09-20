@@ -39,7 +39,7 @@ func (s *Server) getDecision(_ context.Context, _ *mcpsdk.CallToolRequest, in ge
 		return nil, getDecisionOutput{}, err
 	}
 	return nil, getDecisionOutput{
-		ADRID:  "AD" + d.ID,
+		ADRID:  "ADR-" + d.ID,
 		Title:  d.Title,
 		Status: d.Status,
 		Path:   d.Path,
