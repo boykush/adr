@@ -1,0 +1,130 @@
+name: Build and push adr-mcp-server image
+
+# image は決定を同梱するので、main への push で決定が変わるたびに作り直す。
+# mise.toml も対象なのは、image に入る adg の版（fork の ref）と Go の版をそこで決めているため。
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "decisions/**"
+      - "Dockerfile"
+      - ".dockerignore"
+      - "mise.toml"
+      - ".github/workflows/adr-mcp-server-image.yml"
+  pull_request:
+    branches:
+      - main
+    # 決定を足してもビルドは壊れないので、PR では image の入力が変わったときだけ作る。
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "mise.toml"
+      - ".github/workflows/adr-mcp-server-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 新しい決定を優先する。走り残った古い run が、古い `main` を公開しないように。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/boykush/adr-mcp-server
+
+jobs:
+  image:
+    name: Build image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write # GHCR への push
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Resolve versions
+        id: meta
+        run: |
+          go_version=$(sed -n 's/^go *= *"\(.*\)"$/\1/p' mise.toml)
+          adg_ref=$(sed -n 's/.*ad-guidance-tool\.git", *ref *= *"\([0-9a-f]\{40\}\)".*/\1/p' mise.toml)
+          : "${go_version:?go version not found in mise.toml}"
+          : "${adg_ref:?ad-guidance-tool ref not found in mise.toml}"
+          {
+            echo "go_version=${go_version}"
+            echo "adg_ref=${adg_ref}"
+            echo "tag=${adg_ref:0:7}-${GITHUB_SHA:0:7}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        env:
+          GO_VERSION: ${{ steps.meta.outputs.go_version }}
+          ADG_REF: ${{ steps.meta.outputs.adg_ref }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          docker build \
+            --platform linux/amd64 \
+            --build-arg "GO_VERSION=${GO_VERSION}" \
+            --build-arg "ADG_REF=${ADG_REF}" \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --label "org.opencontainers.image.version=${TAG}" \
+            --tag "${IMAGE}:${TAG}" \
+            --tag "${IMAGE}:main" \
+            .
+
+      # tool の呼び出しで image の両方の中身を確かめる。adg が HTTP で応答すること、
+      # 応答元の model が同梱されていること（無ければ list_adrs はエラーを返す）。
+      # 2回目は、image の唯一の引数である listen アドレスの上書き。
+      - name: Smoke test
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          trap 'docker rm --force adr-mcp-server >/dev/null 2>&1 || true' EXIT
+          probe() {
+            for _ in $(seq 1 30); do
+              if response=$(curl -fsS -X POST "http://127.0.0.1:$1/mcp" \
+                   -H 'Content-Type: application/json' \
+                   -H 'Accept: application/json, text/event-stream' \
+                   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_adrs","arguments":{}}}'); then
+                if grep -q '"result"' <<< "$response" && ! grep -q '"isError":true' <<< "$response"; then
+                  return 0
+                fi
+                echo "unexpected response: ${response}" >&2
+                return 1
+              fi
+              sleep 1
+            done
+            docker logs adr-mcp-server >&2 || true
+            return 1
+          }
+
+          docker run --rm --detach --name adr-mcp-server -p 8080:8080 "${IMAGE}:${TAG}"
+          probe 8080 || { echo "default address did not answer" >&2; exit 1; }
+          docker rm --force adr-mcp-server > /dev/null
+
+          docker run --rm --detach --name adr-mcp-server -p 18080:18080 "${IMAGE}:${TAG}" 0.0.0.0:18080
+          probe 18080 || { echo "overridden address did not answer" >&2; exit 1; }
+          echo "MCP server answered from the baked-in decisions on both addresses"
+
+      - name: Log in to GHCR
+        if: github.ref == 'refs/heads/main'
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+
+      # `main` は最新のビルドを追う側のための可変な参照。
+      # `<fork の ref>-<commit>` は、後からどのビルドかを特定するためのもの。
+      - name: Push
+        if: github.ref == 'refs/heads/main'
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          docker push "${IMAGE}:${TAG}"
+          docker push "${IMAGE}:main"
