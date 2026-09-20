@@ -1,0 +1,11 @@
+version: "2"
+
+# ローカル（.mise.toml で版を固定）と CI の lint ステップが同じ設定を読む。
+linters:
+  # errcheck, govet, ineffassign, staticcheck, unused.
+  default: standard
+  exclusions:
+    # 慣用的な投げっぱなし呼び出し（defer した Close、stdout への Fprint 等）は
+    # 咎めない。それ以外の未チェックのエラーは errcheck が拾い続ける。
+    presets:
+      - std-error-handling

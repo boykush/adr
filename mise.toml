@@ -1,5 +1,6 @@
 [tools]
 go = "1.27.1"
+golangci-lint = "2.13.1"
 
 [env]
 _.path = ["{{config_root}}/.tools/bin"]
@@ -17,3 +18,43 @@ run = [
   "mise bootstrap repos update --yes .tools/ad-guidance-tool",
   'go -C .tools/ad-guidance-tool build -o "{{config_root}}/.tools/bin/adg" ./adg',
 ]
+
+# CI（.github/workflows/ci.yml）と共有する検査。定義を1箇所に保ち、ずれないようにする。
+# まとめて走らせるのは `mise run check`。
+[tasks.fmt]
+description = "Check gofmt formatting"
+# 追跡ファイルだけを見る。`.` だと .claude/worktrees の別チェックアウトまで拾う。
+run = '''
+files=$(gofmt -s -l $(git ls-files '*.go'))
+if [ -n "$files" ]; then
+  echo "Needs formatting (run: gofmt -s -w .):"
+  echo "$files"
+  exit 1
+fi
+'''
+
+[tasks.vet]
+description = "Run go vet"
+run = "go vet ./..."
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run"
+
+[tasks.tidy]
+description = "Check go.mod/go.sum are tidy (run: go mod tidy)"
+run = "go mod tidy -diff"
+
+# 出力先を .tools/bin にするのは、そこが既に [env] で PATH に入っていて、
+# ビルドした adi をこのリポジトリ自身に使えるため。
+[tasks.build]
+description = "Build adi"
+run = 'go build -o "{{config_root}}/.tools/bin/adi" .'
+
+[tasks.test]
+description = "Run tests with the race detector"
+run = "go test -race ./..."
+
+[tasks.check]
+description = "Run all CI checks"
+depends = ["fmt", "vet", "lint", "tidy", "build", "test"]
