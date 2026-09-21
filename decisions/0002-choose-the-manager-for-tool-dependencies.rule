@@ -1,0 +1,14 @@
+adr "0002" "Choose the manager for tool dependencies"
+
+# mise も .tool-versions を読むので、あると宣言が mise.toml と2箇所に分かれる
+path "ToolVersions" = "**/.tool-versions"
+path "AquaYaml"     = "**/aqua.yaml"
+
+file "tools_in_mise_toml" {
+  ToolVersions must not exist
+  AquaYaml must not exist
+  # worktree は別ブランチの checkout で、依存パッケージの中身はそのリポジトリの宣言ではない
+  exclude ".claude/worktrees/**"
+  exclude "**/node_modules/**"
+  severity error
+}
