@@ -11,7 +11,7 @@ type listRulesOutput struct {
 }
 
 // ruleJSON is one decision's rule file. It goes out under the decision's id and
-// title, which is what a session cites and what it reads the reasoning by.
+// title, which is what a session reads the reasoning by.
 type ruleJSON struct {
 	ADRID string `json:"adr_id"`
 	Title string `json:"title"`
