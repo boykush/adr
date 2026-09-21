@@ -25,8 +25,8 @@ var mcpCmd = &cobra.Command{
 	Use:   "mcp",
 	Short: "Run an MCP server exposing the decision model over stdio or HTTP",
 	Long: `Run a Model Context Protocol server that exposes the architectural
-decisions, so an agent working in another repository can read the decisions that
-bind it without checking this one out.
+decisions and their rule files, so an agent working in another repository can
+read what binds it without checking this one out.
 
 By default it serves over stdio, spawned per consumer. Pass --http to instead
 serve over Streamable HTTP from one long-running process, so every repository

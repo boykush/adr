@@ -1,6 +1,8 @@
 // Package decision reads the decision model: one MADR file per decision, named
-// NNNN-title-with-dashes.md.
+// NNNN-title-with-dashes.md, and the ADE rule file beside it.
 package decision
+
+import "strings"
 
 // Decision is one file in the model. Body is everything after the frontmatter,
 // heading included, kept verbatim -- what a decision says is its own prose, and
@@ -16,9 +18,16 @@ type Decision struct {
 	// that has the repository checked out as it does to the server.
 	Path string
 	// Rule is the ADE rule file sitting beside the record, when there is one:
-	// the same constraint in machine-readable form. Prose has to name the
-	// repository it speaks about; a rule is evaluated against whichever one
-	// runs it, so it survives the trip to a consumer unchanged.
+	// the part of the decision ADE's DSL can state. Prose has to name the
+	// repository it speaks about; a rule speaks about whichever one it is read
+	// in, so it survives the trip to a consumer unchanged.
 	Rule     string
 	RulePath string
+}
+
+// Binds reports whether the decision binds the work. Only an accepted one
+// does: a proposed decision is still being argued, and the other statuses say
+// where the decision went.
+func (d Decision) Binds() bool {
+	return strings.EqualFold(strings.TrimSpace(d.Status), "accepted")
 }
