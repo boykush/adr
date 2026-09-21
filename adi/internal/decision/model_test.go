@@ -99,6 +99,8 @@ func TestLoadPicksUpTheRuleBesideTheRecord(t *testing.T) {
 		"0001-first.md":   decisionFile("accepted", "First"),
 		"0001-first.rule": "adr \"0001\" \"First\"\n",
 		"0002-second.md":  decisionFile("accepted", "Second"),
+		// Unnumbered, so kept alongside rather than paired with a decision.
+		"template.rule": "adr \"0000\" \"Template\"\n",
 	})
 
 	decisions, err := Load(dir)
@@ -116,5 +118,34 @@ func TestLoadPicksUpTheRuleBesideTheRecord(t *testing.T) {
 	// The rule is not itself a decision.
 	if len(decisions) != 2 {
 		t.Errorf("got %d decisions, want 2", len(decisions))
+	}
+}
+
+func TestLoadRejectsARuleWithNoDecisionBesideIt(t *testing.T) {
+	dir := writeModel(t, map[string]string{
+		"0001-first.md":     decisionFile("accepted", "First"),
+		"0001-renamed.rule": "adr \"0001\" \"Renamed\"\n",
+	})
+
+	_, err := Load(dir)
+	if err == nil || !strings.Contains(err.Error(), "0001-renamed.rule") {
+		t.Fatalf("err = %v, want it to name the rule left behind", err)
+	}
+}
+
+func TestOnlyAnAcceptedDecisionBinds(t *testing.T) {
+	cases := map[string]bool{
+		"accepted":               true,
+		"Accepted":               true,
+		"proposed":               false,
+		"rejected":               false,
+		"deprecated":             false,
+		"superseded by ADR-0002": false,
+		"":                       false,
+	}
+	for status, want := range cases {
+		if got := (Decision{Status: status}).Binds(); got != want {
+			t.Errorf("Binds() with status %q = %v, want %v", status, got, want)
+		}
 	}
 }

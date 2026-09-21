@@ -32,11 +32,3 @@ Chosen option: "AGENTS.md だけを置き、CLAUDE.md は置かない", because 
 
 * Good, because AGENTS.md 1つで Claude Code と Codex の両方に指示が届く
 * Bad, because v2.1.277 未満の Claude Code や、Bedrock 経由・テレメトリ無効のセッションでは指示が読まれない
-
-### Confirmation
-
-隣の `.rule` が、この決定を ADE の DSL で言い直したもの。散文と違って主語を要求せず、走らせたリポジトリ自身について評価される。
-
-```sh
-ade verify -i 0001-choose-the-project-instruction-file-for-coding-agents.rule -p fscheck
-```

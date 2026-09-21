@@ -10,6 +10,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const ruleExt = ".rule"
+
 // header is the subset of MADR's frontmatter the surfaces read. Keys it does
 // not name are ignored rather than rejected, so a decision may carry the rest
 // of MADR's optional metadata -- date, decision-makers, consulted, informed.
@@ -49,7 +51,7 @@ func parseFile(path, name string) (Decision, error) {
 // keep it beside the decision it enforces, so the pairing is the filename and
 // needs nothing in the frontmatter to declare it.
 func (d *Decision) readRule(path, name string) error {
-	rulePath := strings.TrimSuffix(path, ".md") + ".rule"
+	rulePath := strings.TrimSuffix(path, ".md") + ruleExt
 	data, err := os.ReadFile(rulePath)
 	if errors.Is(err, os.ErrNotExist) {
 		return nil
@@ -58,7 +60,7 @@ func (d *Decision) readRule(path, name string) error {
 		return err
 	}
 	d.Rule = string(data)
-	d.RulePath = strings.TrimSuffix(name, ".md") + ".rule"
+	d.RulePath = strings.TrimSuffix(name, ".md") + ruleExt
 	return nil
 }
 
@@ -121,21 +123,26 @@ func normalizeID(raw string) string {
 	return id
 }
 
-// modelFiles lists the decision files in dir. MADR numbers every decision at
-// the front of its name, so a file that does not start with a digit is
-// something else kept alongside -- a template, a README -- and is skipped.
-func modelFiles(dir string) ([]string, error) {
+// modelFiles lists the numbered files in dir: the decisions, and apart from
+// them the rule files. MADR numbers every decision at the front of its name, so
+// a file that does not start with a digit is something else kept alongside --
+// a template, a README -- and is skipped.
+func modelFiles(dir string) (decisions, rules []string, err error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	var names []string
 	for _, e := range entries {
 		name := e.Name()
-		if e.IsDir() || filepath.Ext(name) != ".md" || !strings.ContainsAny(name[:1], "0123456789") {
+		if e.IsDir() || !strings.ContainsAny(name[:1], "0123456789") {
 			continue
 		}
-		names = append(names, name)
+		switch filepath.Ext(name) {
+		case ".md":
+			decisions = append(decisions, name)
+		case ruleExt:
+			rules = append(rules, name)
+		}
 	}
-	return names, nil
+	return decisions, rules, nil
 }

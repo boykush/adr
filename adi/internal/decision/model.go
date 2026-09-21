@@ -3,16 +3,25 @@ package decision
 import (
 	"fmt"
 	"path/filepath"
+	"slices"
 	"sort"
+	"strings"
 )
 
 // Load reads every decision in dir, ordered by id. A duplicate id fails the
 // whole load rather than resolving to whichever file was read first: two
 // decisions answering to one address is a broken model, not a lookup to guess.
+// So does a rule with no decision beside it, which a rename leaves behind and
+// which every session would otherwise stop receiving without a word.
 func Load(dir string) ([]Decision, error) {
-	names, err := modelFiles(dir)
+	names, rules, err := modelFiles(dir)
 	if err != nil {
 		return nil, err
+	}
+	for _, rule := range rules {
+		if record := strings.TrimSuffix(rule, ruleExt) + ".md"; !slices.Contains(names, record) {
+			return nil, fmt.Errorf("rule %s has no decision %s beside it", rule, record)
+		}
 	}
 	decisions := make([]Decision, 0, len(names))
 	seen := make(map[string]string, len(names))

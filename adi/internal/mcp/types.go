@@ -2,6 +2,24 @@ package mcp
 
 import "github.com/boykush/adr/adi/internal/decision"
 
+// --- list_rules ---
+
+type listRulesInput struct{}
+
+type listRulesOutput struct {
+	Rules []ruleJSON `json:"rules"`
+}
+
+// ruleJSON is one decision's rule file. It goes out under the decision's id and
+// title, which is what a session cites and what it reads the reasoning by.
+type ruleJSON struct {
+	ADRID string `json:"adr_id"`
+	Title string `json:"title"`
+	// Rule is the file as written, in ADE's rule DSL.
+	Rule     string `json:"rule"`
+	RulePath string `json:"rule_path"`
+}
+
 // --- list_decisions ---
 
 type listDecisionsInput struct{}
@@ -20,16 +38,12 @@ type decisionSummaryJSON struct {
 	// Path is relative to the model directory, so it reads the same to a client
 	// with the repository checked out as it does here.
 	Path string `json:"path"`
-	// RulePath is present only when the decision carries an ADE rule file. Its
-	// presence is what says the constraint has a machine-readable form; the
-	// content comes with get_decision.
-	RulePath string `json:"rule_path,omitempty"`
 }
 
 // --- get_decision ---
 
 type getDecisionInput struct {
-	ADRID string `json:"adr_id" jsonschema:"The decision's id, written either \"0001\" or \"AD0001\"."`
+	ADRID string `json:"adr_id" jsonschema:"The decision's id, written \"0001\" or \"ADR-0001\"."`
 }
 
 type getDecisionOutput struct {
@@ -39,13 +53,12 @@ type getDecisionOutput struct {
 	Path   string `json:"path"`
 	// Body is the decision's Markdown as written, sections and all.
 	Body string `json:"body"`
-	// Rule is the ADE rule file beside the record, when there is one: the same
-	// constraint in a form that is evaluated against whichever repository runs
-	// it rather than described for a reader.
-	Rule     string `json:"rule,omitempty"`
-	RulePath string `json:"rule_path,omitempty"`
+}
+
+func toRule(d decision.Decision) ruleJSON {
+	return ruleJSON{ADRID: "ADR-" + d.ID, Title: d.Title, Rule: d.Rule, RulePath: d.RulePath}
 }
 
 func toSummary(d decision.Decision) decisionSummaryJSON {
-	return decisionSummaryJSON{ADRID: "ADR-" + d.ID, Title: d.Title, Status: d.Status, Path: d.Path, RulePath: d.RulePath}
+	return decisionSummaryJSON{ADRID: "ADR-" + d.ID, Title: d.Title, Status: d.Status, Path: d.Path}
 }
