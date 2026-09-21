@@ -3,6 +3,10 @@
     "scraps": {
       "type": "http",
       "url": "https://wiki-mcp.boykush.com/mcp"
+    },
+    "adr": {
+      "type": "http",
+      "url": "https://adr-mcp.boykush.com/mcp"
     }
   }
 }
