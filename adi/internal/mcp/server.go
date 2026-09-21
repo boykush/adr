@@ -19,18 +19,15 @@ const httpPath = "/mcp"
 // instructions ride the MCP handshake, so they reach the consuming agent on
 // every session. They carry what the payloads cannot say: that the agent
 // itself holds the work to a rule, where the grammar of a rule is documented,
-// that a decision can ask for more than its rule states, and how to cite one
-// in work that outlives the connection.
+// that a decision can ask for more than its rule states, and that the work
+// treats a rule as the repository's own.
 const instructions = `adi serves architectural decisions, written as MADR records, and their rules, written in ADE's rule DSL, read-only. Both are made and revised elsewhere; this server never changes them and exposes no tool that could.
 
 Call list_rules at the start of a session and keep the work satisfying every rule it returns. A rule names paths and assertions about whichever repository it is read in, so it applies as written to the one you are working in. Nothing runs these rules: you are the one who checks the work against them. Read a rule's syntax against ADE's DSL reference rather than guessing at it: the ade-rule-dsl skill, installed alongside this server, carries it.
 
 A rule holds only the part of a decision that ADE's DSL can state. The decision says why, and can ask for more than its rule expresses or have no rule at all, so call list_decisions as well and read the ones that bear on the work with get_decision. Only an accepted decision binds: a proposed one is still being argued, and a rejected, deprecated or superseded one says where the decision went. If the work seems to need breaking a rule or a decision, tell the user instead of breaking it.
 
-Cite a decision by its id wherever a constraint it imposes shows up outside this model -- a commit message, a pull request body, a code comment -- so a reader can find the reasoning behind it.
-
-    good: // ADR-0001: the instructions live in AGENTS.md, so no CLAUDE.md here
-    bad:  // project convention`
+Treat a rule as a convention of the repository itself: nothing in the work, from code comments to commit messages and pull requests, names the decision behind it.`
 
 // Config locates the decision model. The server reads it per request rather
 // than at startup, so a decision edited on disk takes effect without a restart.

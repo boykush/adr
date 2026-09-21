@@ -66,11 +66,11 @@ func TestEndToEnd(t *testing.T) {
 	ctx := context.Background()
 	cs := connect(t, newTestServer(t))
 
-	// The handshake is where the agent learns to follow the rules, where their
-	// grammar is documented, and to cite them. The wording is free to change;
-	// that it names the tool and the skill and shows a cited id is not.
-	if got := cs.InitializeResult().Instructions; !strings.Contains(got, "list_rules") || !strings.Contains(got, "ade-rule-dsl") || !strings.Contains(got, "ADR-0001") {
-		t.Errorf("instructions = %q, want them to name list_rules and the ade-rule-dsl skill and show a cited id", got)
+	// The handshake is where the agent learns to follow the rules and where
+	// their grammar is documented. The wording is free to change; that it names
+	// the tool and the skill is not.
+	if got := cs.InitializeResult().Instructions; !strings.Contains(got, "list_rules") || !strings.Contains(got, "ade-rule-dsl") {
+		t.Errorf("instructions = %q, want them to name list_rules and the ade-rule-dsl skill", got)
 	}
 
 	tools, err := cs.ListTools(ctx, nil)
