@@ -28,6 +28,18 @@ DSL は散文と違って主語を要求しない——`path "**/CLAUDE.md"` は
 
 ルールにできるのは、決定のうち ADE の DSL で書ける部分だけ。DSL が対象にするのは、構造として現れる決定と、明示的な禁止や要求を述べる決定で、手順やガイドラインの決定は対象外になる。そうした決定はルールを持たず、決定そのものがセッションに伝える。
 
+#### 読み書き
+
+DSL の reference は、ルールを読む側にも書く側にも要る。それを持つ skill `ade-rule-dsl` は、[ai-plugins](https://github.com/boykush/ai-plugins) の `adr-remote-mcp` package が MCP サーバーへの参照と一緒に配る。ルールを受け取るリポジトリには、読むための文法も同じ依存で届く。この repo もその package に依存して同じ skill を受け取る（MCP サーバー `adr` の参照も一緒に入る）。
+
+書き方は skill `write-ade-rule` が持つ。決定との対応やパスの基準といった、この repo だけの取り決めなので ai-plugins には置かず、`.apm/skills/` から `apm install` が `.claude/skills/` と `.agents/skills/` へ配る。文法は reference を分けず、`ade-rule-dsl` のものを読む。書いたら `mise run rules` で ADE の parser（`dsl.Validate`）に通す。中身は `tools/ruledsl` で、CI も同じ task を回す。確かめるのは DSL として読めることだけで、ルールが満たされているかは見ない。
+
+reference は ADE の `dsl/dsl-reference.md` を、Apache-2.0 の LICENSE と一緒に写したもの。上流を指すだけにしないのは、Codex の sandbox のようにネットワークに出られないセッションでも読めるようにするため。版は go.mod が要求する ADE、つまり `mise run rules` が通す parser の版に揃え、この repo に配られた reference がその版のものかを `go test` が確かめる。ADE を上げたら ai-plugins 側を書き直し、その commit へ `apm.yml` の固定を上げる。
+
+```sh
+go run ./tools/ruledsl vendor <ai-plugins>/plugins/adr-remote-mcp/.apm/skills/ade-rule-dsl/references
+```
+
 ## 配る道具
 
 `adi`（Architectural Decision Injection）。`adi/` にある。
@@ -55,7 +67,7 @@ adi mcp --model decisions --http 127.0.0.1:8080
 
 **書き込みの面は出さない。** 認証も TLS も持たないサーバーを前段越しに公開するので、エージェントは読めるが状態を変えられない形を守る。`.rule` はパースも実行もせず、テキストとして渡すだけ。
 
-ADG の MCP が持つ `get_dsl_reference` と `validate_rule` は、ルールを書く側のためのもの。書くのはこのリポジトリで、読む側のセッションには要らないので持たない。
+ADG の MCP が持つ `get_dsl_reference` と `validate_rule` は持たない。reference は読む側にも要るが、MCP サーバーへの参照と同じ package が skill として届けるので、MCP の面には足さない。handshake の instructions がその skill を指す。`validate_rule` の役は、ルールを書くこの repo の `mise run rules` が持つ（[読み書き](#読み書き)）。
 
 ## 配布
 
