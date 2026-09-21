@@ -18,11 +18,12 @@ const httpPath = "/mcp"
 
 // instructions ride the MCP handshake, so they reach the consuming agent on
 // every session. They carry what the payloads cannot say: that the agent
-// itself holds the work to a rule, that a decision can ask for more than its
-// rule states, and how to cite one in work that outlives the connection.
+// itself holds the work to a rule, where the grammar of a rule is documented,
+// that a decision can ask for more than its rule states, and how to cite one
+// in work that outlives the connection.
 const instructions = `adi serves architectural decisions, written as MADR records, and their rules, written in ADE's rule DSL, read-only. Both are made and revised elsewhere; this server never changes them and exposes no tool that could.
 
-Call list_rules at the start of a session and keep the work satisfying every rule it returns. A rule names paths and assertions about whichever repository it is read in, so it applies as written to the one you are working in. Nothing runs these rules: you are the one who checks the work against them.
+Call list_rules at the start of a session and keep the work satisfying every rule it returns. A rule names paths and assertions about whichever repository it is read in, so it applies as written to the one you are working in. Nothing runs these rules: you are the one who checks the work against them. Read a rule's syntax against ADE's DSL reference rather than guessing at it: the ade-rule-dsl skill, installed alongside this server, carries it.
 
 A rule holds only the part of a decision that ADE's DSL can state. The decision says why, and can ask for more than its rule expresses or have no rule at all, so call list_decisions as well and read the ones that bear on the work with get_decision. Only an accepted decision binds: a proposed one is still being argued, and a rejected, deprecated or superseded one says where the decision went. If the work seems to need breaking a rule or a decision, tell the user instead of breaking it.
 
