@@ -1,0 +1,47 @@
+lockfile_version: '1'
+apm_version: 0.31.0
+dependencies:
+- repo_url: boykush/ai-plugins
+  name: wiki-remote-mcp
+  host: github.com
+  resolved_commit: c18cde4e315ad146c72592fcb1192a1ab4086d50
+  resolved_ref: c18cde4e315ad146c72592fcb1192a1ab4086d50
+  version: 0.1.0
+  virtual_path: plugins/wiki-remote-mcp
+  is_virtual: true
+  package_type: apm_package
+  content_hash: sha256:561a4718cae6246edb4f414ef2f1a8a8eae873646d95292934ef83532965e569
+deployments:
+- kind: uri
+  target: mcp
+  value: scraps
+  runtime: claude
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: uri
+  target: mcp
+  value: scraps
+  runtime: codex
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+mcp_servers:
+- scraps
+mcp_configs:
+  scraps:
+    name: scraps
+    transport: http
+    registry: false
+    url: https://wiki-mcp.boykush.com/mcp
+mcp_target_servers:
+  claude:
+  - scraps
+  codex:
+  - scraps
+mcp_config_provenance:
+  scraps: wiki-remote-mcp

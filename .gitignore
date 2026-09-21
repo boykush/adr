@@ -1,2 +1,4 @@
 # mise の build タスクが adi を置く先
 .tools/
+# apm install が依存を展開する先。生成された .mcp.json などは commit する
+apm_modules/
