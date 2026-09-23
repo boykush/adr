@@ -1,0 +1,23 @@
+adr "0003" "Choose the manager for external AI plugin dependencies"
+
+# apm.yml が無いリポジトリには何も要求しない。あるなら root の1枚が対象で、
+# plugin を配る側の package manifest（plugins/*/apm.yml）は targets を持たないので拾わない。
+path "ApmManifest" = "apm.yml"
+
+# targets が apm install の生成先を決める。片方だけだと、もう一方のエージェントには
+# skill も MCP サーバーの参照も届かない。YAML の block と flow どちらの書き方も通す。
+file "apm_targets_both_agents" {
+  ApmManifest must contain "regex:[-\\[,]\\s*claude\\b"
+  ApmManifest must contain "regex:[-\\[,]\\s*codex\\b"
+  severity error
+}
+
+# Claude Code の plugin は enabledPlugins で参照する。そこに書いた依存は Codex に届かず、
+# 入っている版もエージェントの runtime が持つのでリポジトリからは見えない。
+path "ClaudeSettings" = ".claude/settings.json"
+
+file "plugin_deps_only_in_apm_manifest" {
+  ClaudeSettings must not contain "enabledPlugins"
+  ClaudeSettings must not contain "extraKnownMarketplaces"
+  severity error
+}
