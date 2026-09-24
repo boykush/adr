@@ -11,7 +11,13 @@ GITHUB_TOKEN は実行中のリポジトリに閉じ、それで起こした操�
 
 資格は PAT か GitHub App になる。PAT はそれ自体がトークンで、owner 本人として振る舞う。App のインストールトークンは、App の private key で署名した JWT と引き換えに発行される。App の標準の手段は公式の `actions/create-github-app-token` で、private key を repository secret から値として受け取る。
 
-**App の private key には期限が無い**。repository secret に置いた鍵は、一度読まれれば、App から revoke するまで誰でもトークンを発行できる。トークンは1時間で切れるが、元になる鍵は切れない。GitHub も、鍵は失効せず手で revoke するものだとしたうえで、key vault に入れて署名専用にすることを勧めている。
+**App の private key には期限が無い**。repository secret に置いた鍵は、一度読まれれば、App から revoke するまで誰でもトークンを発行できる。トークンは1時間で切れるが、元になる鍵は切れない。GitHub も、鍵は失効せず手で revoke するものだとしたうえで、key vault に入れて署名専用にすることを勧めている。同じ対策は Flatt Security の連載でも挙がっている。
+
+<https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps>
+
+<https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/best-practices-for-creating-a-github-app>
+
+<https://blog.flatt.tech/entry/2026-github-actions-security-part2>
 
 GITHUB_TOKEN で足りない操作を、どの資格で行い、その資格をどう持つか。
 
@@ -41,8 +47,6 @@ Chosen option: "GitHub App の鍵を AWS KMS に入れ、署名だけを任せ�
 * trust policy にはその App を使うリポジトリを列挙し、owner 全体のワイルドカードにはしない
 * 鍵の material は state に載るので Terraform を通さず、手元から CLI で入れて、手元の PEM は消す。apply する CI の role には、署名も material の投入も key policy の変更も許さない
 * workflow の外で自分で JWT に署名する consumer（Argo CD Image Updater など）は KMS を使えない。その鍵は Parameter Store に置き、consumer へ渡す workflow が OIDC で読む
-
-<https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps>
 
 <https://github.com/suzuki-shunsuke/create-github-app-token-aws-kms>
 

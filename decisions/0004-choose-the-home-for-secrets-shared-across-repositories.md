@@ -37,11 +37,7 @@ Google Cloud も同じ構図を作れるが、`google-github-actions/auth` が�
 
 消費側は composite action を呼ぶ。秘密ごとに読み出しの手順を書き散らさず、role・パラメータ名・マスクの扱いを1箇所に閉じるため。リポジトリを増やす操作は、trust policy に1行足すことと、ワークフローに2ステップ足すことだけにする。
 
-鍵そのものを取り出せない形で預ける話——GitHub App の private key を KMS に入れ、署名だけを任せる——は、この決定の範囲外。GitHub 自身が key vault に置いて sign-only にすることを勧めており、同じ対策は Flatt Security の連載でも挙がっている。別に決める。
-
-<https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/best-practices-for-creating-a-github-app>
-
-<https://blog.flatt.tech/entry/2026-github-actions-security-part2>
+鍵そのものを取り出せない形で預ける話——GitHub App の private key を KMS に入れ、署名だけを任せる——は、この決定の範囲外。別に決める。
 
 ### Consequences
 
