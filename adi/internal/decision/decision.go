@@ -2,7 +2,10 @@
 // NNNN-title-with-dashes.md, and the ADE rule file beside it.
 package decision
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // Decision is one file in the model. Body is everything after the frontmatter,
 // heading included, kept verbatim -- what a decision says is its own prose, and
@@ -13,7 +16,10 @@ type Decision struct {
 	ID     string
 	Title  string
 	Status string
-	Body   string
+	// Tags say which repositories the decision bears on: those that declare at
+	// least one of them. What a tag stands for is the model's to define.
+	Tags []string
+	Body string
 	// Path is relative to the model directory, so it reads the same to a client
 	// that has the repository checked out as it does to the server.
 	Path string
@@ -30,4 +36,19 @@ type Decision struct {
 // where the decision went.
 func (d Decision) Binds() bool {
 	return strings.EqualFold(strings.TrimSpace(d.Status), "accepted")
+}
+
+// AppliesTo reports whether the decision bears on a repository that declares
+// the given tags. A decision without tags bears on every repository, so no
+// declaration leaves it out.
+func (d Decision) AppliesTo(tags []string) bool {
+	if len(d.Tags) == 0 {
+		return true
+	}
+	for _, tag := range tags {
+		if slices.Contains(d.Tags, normalizeTag(tag)) {
+			return true
+		}
+	}
+	return false
 }

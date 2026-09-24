@@ -33,7 +33,11 @@ serve over Streamable HTTP from one long-running process, so every repository
 can share a single server by pointing its MCP client at <addr>/mcp.
 
 The model is never embedded in the binary: --model says where to read it, which
-is what lets the decisions ship and change independently of the tool.`,
+is what lets the decisions ship and change independently of the tool.
+
+A repository narrows the decisions it lists by declaring tags, comma-separated:
+in the Adi-Tags header over HTTP, or in ADI_TAGS over stdio. Untagged decisions
+are listed whatever it declares.`,
 	Args: cobra.NoArgs,
 	// A server failure is not a misuse of the command.
 	SilenceUsage: true,
