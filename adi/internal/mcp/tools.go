@@ -24,11 +24,11 @@ const (
 func (s *Server) registerTools(srv *mcpsdk.Server) {
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "list_rules",
-		Description: "List every rule that binds this session, in full: the rule files of the accepted decisions, written in ADE's rule DSL. A rule names paths and assertions about whichever repository it is read in, so it applies as written to the one you are working in. Nothing runs the rules: check the work against them yourself. Call this at the start of a session. A rule holds only the part of its decision that ADE's DSL can state.",
+		Description: "List every rule that binds this session, in full: the rule files of the accepted decisions, written in ADE's rule DSL. A rule names paths and assertions about whichever repository it is read in, so it applies as written to the one you are working in. Nothing runs the rules: check the work against them yourself. Call this once the work is done, before it is pushed, not at the start of a session. A rule holds only the part of its decision that ADE's DSL can state.",
 	}, s.listRules)
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "list_decisions",
-		Description: "List the architectural decisions in the model as their id, title, status and tags. Call this at the start of a session too: a decision can bind the work beyond what its rule states, or have no rule at all. A decision without tags bears on every repository; one with tags bears on the repositories that declare one of them, and when the repository you work in declares tags, the listing leaves the others out. Read any of them in full with get_decision.",
+		Description: "List the architectural decisions in the model as their id, title, status and tags. Call this once the work is done too, before it is pushed: a decision can bind the work beyond what its rule states, or have no rule at all. A decision without tags bears on every repository; one with tags bears on the repositories that declare one of them, and when the repository you work in declares tags, the listing leaves the others out. Read any of them in full with get_decision.",
 	}, s.listDecisions)
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "get_decision",
