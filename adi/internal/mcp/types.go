@@ -30,7 +30,7 @@ type listDecisionsOutput struct {
 
 // decisionSummaryJSON is one row of the listing: enough to judge whether a
 // decision bears on the work, and the id to read it by. The body is left out
-// so the listing stays small enough to read at the start of every session.
+// so the listing stays small enough to read before every push.
 type decisionSummaryJSON struct {
 	ADRID  string   `json:"adr_id"`
 	Title  string   `json:"title"`
