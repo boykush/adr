@@ -1,0 +1,14 @@
+adr "0005" "Choose how workflows authenticate to GitHub beyond GITHUB_TOKEN"
+
+# App のトークンは suzuki-shunsuke/create-github-app-token-aws-kms で取る。「トークンを取るなら」
+# という条件は DSL に書けないので、置き換えた公式の actions/create-github-app-token を
+# 使っていないことを assertion にする。同じ名前の fork も拾い、-aws-kms は直後が @ でないので外れる。
+# PAT は workflow の上では他の secret と見分けられないので、ここでは見ない。
+path "Workflows"     = ".github/workflows/*.yml"
+path "WorkflowsYaml" = ".github/workflows/*.yaml"
+
+file "app_token_via_aws_kms" {
+  Workflows must not contain "regex:uses:\\s*\\S*/create-github-app-token@"
+  WorkflowsYaml must not contain "regex:uses:\\s*\\S*/create-github-app-token@"
+  severity error
+}
