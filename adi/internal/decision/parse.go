@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -12,11 +13,13 @@ import (
 
 const ruleExt = ".rule"
 
-// header is the subset of MADR's frontmatter the surfaces read. Keys it does
-// not name are ignored rather than rejected, so a decision may carry the rest
-// of MADR's optional metadata -- date, decision-makers, consulted, informed.
+// header is the part of the frontmatter the surfaces read: MADR's status, and
+// the tags MADR leaves to each project to define. Keys it does not name are
+// ignored rather than rejected, so a decision may carry the rest of MADR's
+// optional metadata -- date, decision-makers, consulted, informed.
 type header struct {
-	Status string `yaml:"status"`
+	Status string   `yaml:"status"`
+	Tags   []string `yaml:"tags"`
 }
 
 // parseFile reads one decision file. name is its path relative to the model
@@ -40,7 +43,11 @@ func parseFile(path, name string) (Decision, error) {
 	if title == "" {
 		return Decision{}, fmt.Errorf("%s: no title; MADR puts it in the document's first heading", name)
 	}
-	d := Decision{ID: id, Title: title, Status: h.Status, Body: body, Path: name}
+	tags, err := tagsFrom(h.Tags)
+	if err != nil {
+		return Decision{}, fmt.Errorf("%s: %w", name, err)
+	}
+	d := Decision{ID: id, Title: title, Status: h.Status, Tags: tags, Body: body, Path: name}
 	if err := d.readRule(path, name); err != nil {
 		return Decision{}, err
 	}
@@ -91,6 +98,29 @@ func titleFrom(body string) string {
 		}
 	}
 	return ""
+}
+
+// tagsFrom renders the frontmatter's tags the way they are compared, once each.
+// An empty tag fails the load rather than being dropped: no declaration can
+// match it, so it is a slip in the record.
+func tagsFrom(raw []string) ([]string, error) {
+	var tags []string
+	for _, t := range raw {
+		tag := normalizeTag(t)
+		if tag == "" {
+			return nil, errors.New("tags holds an empty tag")
+		}
+		if !slices.Contains(tags, tag) {
+			tags = append(tags, tag)
+		}
+	}
+	return tags, nil
+}
+
+// normalizeTag is applied to both sides of a comparison, so "Go" in a record
+// and "go" in a declaration name the same tag.
+func normalizeTag(raw string) string {
+	return strings.ToLower(strings.TrimSpace(raw))
 }
 
 // idFromName takes the digits MADR puts at the front of a filename.

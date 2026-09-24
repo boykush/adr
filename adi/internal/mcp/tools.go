@@ -2,14 +2,25 @@ package mcp
 
 import (
 	"context"
+	"os"
+	"strings"
 
 	"github.com/boykush/adr/adi/internal/decision"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// registerTools wires the read surface. There is no writing tool and no tool
-// that narrows the list for the caller: an agent judges relevance from a title,
-// and the server holds no opinion about which paths a decision touches.
+// tagsHeader and tagsEnv carry the tags a repository declares, comma-separated.
+// One HTTP server answers every repository, so each request brings its own in
+// a header; a stdio server belongs to one repository and reads its environment.
+const (
+	tagsHeader = "Adi-Tags"
+	tagsEnv    = "ADI_TAGS"
+)
+
+// registerTools wires the read surface. There is no writing tool. Only the
+// decision listing narrows, by the tags the repository declares: a rule already
+// confines itself to the paths it names, and a decision asked for by id is one
+// the session wants whatever its tags.
 func (s *Server) registerTools(srv *mcpsdk.Server) {
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "list_rules",
@@ -17,7 +28,7 @@ func (s *Server) registerTools(srv *mcpsdk.Server) {
 	}, s.listRules)
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "list_decisions",
-		Description: "List every architectural decision in the model as its id, title and status. Call this at the start of a session too: a decision can bind the work beyond what its rule states, or have no rule at all. Read any of them in full with get_decision.",
+		Description: "List the architectural decisions in the model as their id, title, status and tags. Call this at the start of a session too: a decision can bind the work beyond what its rule states, or have no rule at all. A decision without tags bears on every repository; one with tags bears on the repositories that declare one of them, and when the repository you work in declares tags, the listing leaves the others out. Read any of them in full with get_decision.",
 	}, s.listDecisions)
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "get_decision",
@@ -41,13 +52,19 @@ func (s *Server) listRules(_ context.Context, _ *mcpsdk.CallToolRequest, _ listR
 	return nil, listRulesOutput{Rules: rules}, nil
 }
 
-func (s *Server) listDecisions(_ context.Context, _ *mcpsdk.CallToolRequest, _ listDecisionsInput) (*mcpsdk.CallToolResult, listDecisionsOutput, error) {
+func (s *Server) listDecisions(_ context.Context, req *mcpsdk.CallToolRequest, _ listDecisionsInput) (*mcpsdk.CallToolResult, listDecisionsOutput, error) {
 	decisions, err := decision.Load(s.cfg.ModelDir)
 	if err != nil {
 		return nil, listDecisionsOutput{}, err
 	}
+	tags := declaredTags(req)
 	summaries := make([]decisionSummaryJSON, 0, len(decisions))
 	for _, d := range decisions {
+		// A repository that declares nothing has given no ground to leave a
+		// decision out on.
+		if len(tags) > 0 && !d.AppliesTo(tags) {
+			continue
+		}
 		summaries = append(summaries, toSummary(d))
 	}
 	return nil, listDecisionsOutput{Decisions: summaries}, nil
@@ -62,7 +79,28 @@ func (s *Server) getDecision(_ context.Context, _ *mcpsdk.CallToolRequest, in ge
 		ADRID:  "ADR-" + d.ID,
 		Title:  d.Title,
 		Status: d.Status,
+		Tags:   d.Tags,
 		Path:   d.Path,
 		Body:   d.Body,
 	}, nil
+}
+
+// declaredTags returns the tags the repository behind req declares. Over HTTP
+// only the request's header counts: the server's own environment describes no
+// repository of the many it answers.
+func declaredTags(req *mcpsdk.CallToolRequest) []string {
+	if req != nil && req.Extra != nil && req.Extra.Header != nil {
+		return splitTags(req.Extra.Header.Get(tagsHeader))
+	}
+	return splitTags(os.Getenv(tagsEnv))
+}
+
+func splitTags(raw string) []string {
+	var tags []string
+	for _, tag := range strings.Split(raw, ",") {
+		if tag = strings.TrimSpace(tag); tag != "" {
+			tags = append(tags, tag)
+		}
+	}
+	return tags
 }

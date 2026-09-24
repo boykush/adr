@@ -3,6 +3,7 @@ package decision
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -130,6 +131,63 @@ func TestLoadRejectsARuleWithNoDecisionBesideIt(t *testing.T) {
 	_, err := Load(dir)
 	if err == nil || !strings.Contains(err.Error(), "0001-renamed.rule") {
 		t.Fatalf("err = %v, want it to name the rule left behind", err)
+	}
+}
+
+func TestLoadReadsTagsTheWayTheyAreCompared(t *testing.T) {
+	dir := writeModel(t, map[string]string{
+		"0001-first.md":  "---\nstatus: accepted\ntags: [Go, \" product \", go]\n---\n\n# First\n",
+		"0002-second.md": decisionFile("accepted", "Second"),
+	})
+
+	decisions, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := decisions[0].Tags, []string{"go", "product"}; !slices.Equal(got, want) {
+		t.Errorf("tags = %q, want %q", got, want)
+	}
+	if decisions[1].Tags != nil {
+		t.Errorf("untagged decision has tags %q", decisions[1].Tags)
+	}
+}
+
+func TestLoadRejectsMalformedTags(t *testing.T) {
+	for name, front := range map[string]string{
+		// Nothing a repository declares can match it.
+		"empty": "tags: [go, \"\"]",
+		// A single word is still a list; a scalar is a slip, not a shorthand.
+		"scalar": "tags: go",
+	} {
+		dir := writeModel(t, map[string]string{
+			"0001-first.md": "---\nstatus: accepted\n" + front + "\n---\n\n# First\n",
+		})
+		if _, err := Load(dir); err == nil || !strings.Contains(err.Error(), "0001-first.md") {
+			t.Errorf("%s: err = %v, want it to name the file", name, err)
+		}
+	}
+}
+
+func TestAppliesToTheRepositoriesDeclaringOneOfItsTags(t *testing.T) {
+	tagged := Decision{Tags: []string{"go", "product"}}
+	cases := []struct {
+		d        Decision
+		declared []string
+		want     bool
+	}{
+		{tagged, []string{"go"}, true},
+		{tagged, []string{"Go"}, true},
+		{tagged, []string{"rust", "product"}, true},
+		{tagged, []string{"rust"}, false},
+		{tagged, nil, false},
+		// An untagged decision bears on every repository, whatever it declares.
+		{Decision{}, []string{"rust"}, true},
+		{Decision{}, nil, true},
+	}
+	for _, c := range cases {
+		if got := c.d.AppliesTo(c.declared); got != c.want {
+			t.Errorf("%q.AppliesTo(%q) = %v, want %v", c.d.Tags, c.declared, got, c.want)
+		}
 	}
 }
 

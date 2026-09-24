@@ -3,6 +3,7 @@ package mcp
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -15,11 +16,14 @@ import (
 
 func newTestServer(t *testing.T) *Server {
 	t.Helper()
+	// A declaration in the environment running the tests would narrow every
+	// listing here.
+	t.Setenv(tagsEnv, "")
 	dir := t.TempDir()
 	files := map[string]string{
-		"0001-first.md":    "---\nstatus: accepted\n---\n\n# First\n\n## Context and Problem Statement\n\nthe first one\n",
+		"0001-first.md":    "---\nstatus: accepted\ntags: [product]\n---\n\n# First\n\n## Context and Problem Statement\n\nthe first one\n",
 		"0001-first.rule":  "adr \"0001\" \"First\"\n\nfile \"x\" {\n  severity error\n}\n",
-		"0002-second.md":   "---\nstatus: proposed\n---\n\n# Second\n\n## Context and Problem Statement\n\nstill arguing\n",
+		"0002-second.md":   "---\nstatus: proposed\ntags: [go]\n---\n\n# Second\n\n## Context and Problem Statement\n\nstill arguing\n",
 		"0002-second.rule": "adr \"0002\" \"Second\"\n\nfile \"y\" {\n  severity error\n}\n",
 		"0003-third.md":    "---\nstatus: accepted\n---\n\n# Third\n\n## Context and Problem Statement\n\nno rule of its own\n",
 	}
@@ -50,6 +54,39 @@ func connect(t *testing.T, s *Server) *mcpsdk.ClientSession {
 	return cs
 }
 
+// headerTransport stands in for an MCP client configured with headers for this
+// server, the way a repository declares its tags.
+type headerTransport struct{ header http.Header }
+
+func (h headerTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	r = r.Clone(r.Context())
+	for k, v := range h.header {
+		r.Header[k] = v
+	}
+	return http.DefaultTransport.RoundTrip(r)
+}
+
+// connectHTTP reaches s over Streamable HTTP, the way the deployed server is
+// reached. DisableStandaloneSSE mirrors a request/response client, since the
+// stateless server pushes nothing.
+func connectHTTP(t *testing.T, s *Server, header http.Header) *mcpsdk.ClientSession {
+	t.Helper()
+	httpServer := httptest.NewServer(s.httpHandler())
+	t.Cleanup(httpServer.Close)
+
+	client := mcpsdk.NewClient(&mcpsdk.Implementation{Name: "test-client", Version: "0"}, nil)
+	cs, err := client.Connect(context.Background(), &mcpsdk.StreamableClientTransport{
+		Endpoint:             httpServer.URL + httpPath,
+		DisableStandaloneSSE: true,
+		HTTPClient:           &http.Client{Transport: headerTransport{header}},
+	}, nil)
+	if err != nil {
+		t.Fatalf("client connect: %v", err)
+	}
+	t.Cleanup(func() { cs.Close() })
+	return cs
+}
+
 func contentText(res *mcpsdk.CallToolResult) string {
 	if len(res.Content) == 0 {
 		return ""
@@ -58,6 +95,23 @@ func contentText(res *mcpsdk.CallToolResult) string {
 		return tc.Text
 	}
 	return ""
+}
+
+func listDecisionIDs(t *testing.T, cs *mcpsdk.ClientSession) []string {
+	t.Helper()
+	res, err := cs.CallTool(context.Background(), &mcpsdk.CallToolParams{Name: "list_decisions", Arguments: map[string]any{}})
+	if err != nil {
+		t.Fatalf("call list_decisions: %v", err)
+	}
+	var list listDecisionsOutput
+	if err := json.Unmarshal([]byte(contentText(res)), &list); err != nil {
+		t.Fatalf("decode list_decisions: %v", err)
+	}
+	ids := make([]string, 0, len(list.Decisions))
+	for _, d := range list.Decisions {
+		ids = append(ids, d.ADRID)
+	}
+	return ids
 }
 
 // TestEndToEnd drives the server through a real MCP session: the handshake, the
@@ -125,6 +179,9 @@ func TestEndToEnd(t *testing.T) {
 	if list.Decisions[1].Status != "proposed" {
 		t.Errorf("second status = %q, want proposed", list.Decisions[1].Status)
 	}
+	if !slices.Equal(list.Decisions[0].Tags, []string{"product"}) || list.Decisions[2].Tags != nil {
+		t.Errorf("tags = %q and %q, want [product] and none", list.Decisions[0].Tags, list.Decisions[2].Tags)
+	}
 
 	for _, id := range []string{"1", "0001", "ADR-0001"} {
 		res, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "get_decision", Arguments: map[string]any{"adr_id": id}})
@@ -135,7 +192,7 @@ func TestEndToEnd(t *testing.T) {
 		if err := json.Unmarshal([]byte(contentText(res)), &got); err != nil {
 			t.Fatalf("decode get_decision(%q): %v", id, err)
 		}
-		if got.ADRID != "ADR-0001" || !strings.Contains(got.Body, "the first one") {
+		if got.ADRID != "ADR-0001" || !strings.Contains(got.Body, "the first one") || !slices.Equal(got.Tags, []string{"product"}) {
 			t.Errorf("get_decision(%q) = %+v", id, got)
 		}
 		// The decision comes without its rule: handing rules out is list_rules'
@@ -154,35 +211,55 @@ func TestEndToEnd(t *testing.T) {
 	}
 }
 
-// TestHTTPTransport drives the same surface over Streamable HTTP, the way the
-// deployed server is reached. DisableStandaloneSSE mirrors a request/response
-// client, since the stateless server pushes nothing.
-func TestHTTPTransport(t *testing.T) {
+// TestDeclaredTagsNarrowTheDecisionsOnly serves one repository over stdio, as a
+// consumer running adi itself would, declaring its tags in the environment.
+func TestDeclaredTagsNarrowTheDecisionsOnly(t *testing.T) {
 	ctx := context.Background()
 	s := newTestServer(t)
+	t.Setenv(tagsEnv, " Go ")
+	cs := connect(t, s)
 
-	httpServer := httptest.NewServer(s.httpHandler())
-	defer httpServer.Close()
+	// ADR-0001 carries product alone, so it drops out. ADR-0003 has no tags and
+	// bears on every repository.
+	if got, want := listDecisionIDs(t, cs), []string{"ADR-0002", "ADR-0003"}; !slices.Equal(got, want) {
+		t.Errorf("decisions = %v, want %v", got, want)
+	}
 
-	client := mcpsdk.NewClient(&mcpsdk.Implementation{Name: "test-client", Version: "0"}, nil)
-	cs, err := client.Connect(ctx, &mcpsdk.StreamableClientTransport{
-		Endpoint:             httpServer.URL + httpPath,
-		DisableStandaloneSSE: true,
-	}, nil)
+	// A rule confines itself by its paths, so ADR-0001's still reaches this
+	// repository whatever it declares.
+	res, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "list_rules", Arguments: map[string]any{}})
 	if err != nil {
-		t.Fatalf("client connect: %v", err)
+		t.Fatalf("call list_rules: %v", err)
 	}
-	defer cs.Close()
+	var rules listRulesOutput
+	if err := json.Unmarshal([]byte(contentText(res)), &rules); err != nil {
+		t.Fatalf("decode list_rules: %v", err)
+	}
+	if len(rules.Rules) != 1 || rules.Rules[0].ADRID != "ADR-0001" {
+		t.Errorf("rules = %+v, want ADR-0001's", rules.Rules)
+	}
 
-	res, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "list_decisions", Arguments: map[string]any{}})
+	res, err = cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "get_decision", Arguments: map[string]any{"adr_id": "1"}})
 	if err != nil {
-		t.Fatalf("call list_decisions: %v", err)
+		t.Fatalf("call get_decision: %v", err)
 	}
-	var list listDecisionsOutput
-	if err := json.Unmarshal([]byte(contentText(res)), &list); err != nil {
-		t.Fatalf("decode list_decisions: %v", err)
+	if res.IsError {
+		t.Errorf("get_decision of a decision left out of the listing failed: %s", contentText(res))
 	}
-	if len(list.Decisions) != 3 {
-		t.Fatalf("decisions = %+v, want 3", list.Decisions)
+}
+
+// TestHTTPTransport drives the same surface over Streamable HTTP, where each
+// request declares its repository's tags in a header.
+func TestHTTPTransport(t *testing.T) {
+	s := newTestServer(t)
+	// The server answers every repository, so its own environment declares
+	// nothing on their behalf.
+	t.Setenv(tagsEnv, "go")
+
+	if got, want := listDecisionIDs(t, connectHTTP(t, s, nil)), []string{"ADR-0001", "ADR-0002", "ADR-0003"}; !slices.Equal(got, want) {
+		t.Errorf("declaring nothing: decisions = %v, want %v", got, want)
+	}
+	if got, want := listDecisionIDs(t, connectHTTP(t, s, http.Header{"Adi-Tags": {"product, rust"}})), []string{"ADR-0001", "ADR-0003"}; !slices.Equal(got, want) {
+		t.Errorf("declaring product, rust: decisions = %v, want %v", got, want)
 	}
 }
