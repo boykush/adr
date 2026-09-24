@@ -1,6 +1,6 @@
 [tools]
 go = "1.27.1"
-golangci-lint = "2.13.1"
+golangci-lint = "2.13.2"
 
 [env]
 _.path = ["{{config_root}}/.tools/bin"]
