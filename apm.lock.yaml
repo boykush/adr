@@ -149,7 +149,25 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:1e17bc63491c3ca09545ea0ec834e29e82f464e35e2af22f135859e392bde358
+  content_hash: sha256:e191caa5d31a938ebfeda5f55e2898de2cf56babbc36cb5587ce7caba56db145
+- kind: project-relative
+  target: claude
+  value: .claude/skills/write-adr
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: claude
+  value: .claude/skills/write-adr/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:9ceaced6ca59c4d5439a5f4fd7d3b467a22fb025f8a25ceca71819eb896eb0c5
 - kind: project-relative
   target: codex
   value: .agents/skills/ade-rule-dsl
@@ -239,7 +257,25 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:1e17bc63491c3ca09545ea0ec834e29e82f464e35e2af22f135859e392bde358
+  content_hash: sha256:e191caa5d31a938ebfeda5f55e2898de2cf56babbc36cb5587ce7caba56db145
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/write-adr
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: null
+- kind: project-relative
+  target: legacy
+  value: .agents/skills/write-adr/SKILL.md
+  runtime: null
+  scope: project
+  owners:
+  - .
+  active_owner: .
+  content_hash: sha256:9ceaced6ca59c4d5439a5f4fd7d3b467a22fb025f8a25ceca71819eb896eb0c5
 - kind: uri
   target: mcp
   value: adr
@@ -310,8 +346,14 @@ mcp_config_provenance:
 local_deployed_files:
 - .agents/skills/write-ade-rule
 - .agents/skills/write-ade-rule/SKILL.md
+- .agents/skills/write-adr
+- .agents/skills/write-adr/SKILL.md
 - .claude/skills/write-ade-rule
 - .claude/skills/write-ade-rule/SKILL.md
+- .claude/skills/write-adr
+- .claude/skills/write-adr/SKILL.md
 local_deployed_file_hashes:
-  .agents/skills/write-ade-rule/SKILL.md: sha256:1e17bc63491c3ca09545ea0ec834e29e82f464e35e2af22f135859e392bde358
-  .claude/skills/write-ade-rule/SKILL.md: sha256:1e17bc63491c3ca09545ea0ec834e29e82f464e35e2af22f135859e392bde358
+  .agents/skills/write-ade-rule/SKILL.md: sha256:e191caa5d31a938ebfeda5f55e2898de2cf56babbc36cb5587ce7caba56db145
+  .agents/skills/write-adr/SKILL.md: sha256:9ceaced6ca59c4d5439a5f4fd7d3b467a22fb025f8a25ceca71819eb896eb0c5
+  .claude/skills/write-ade-rule/SKILL.md: sha256:e191caa5d31a938ebfeda5f55e2898de2cf56babbc36cb5587ce7caba56db145
+  .claude/skills/write-adr/SKILL.md: sha256:9ceaced6ca59c4d5439a5f4fd7d3b467a22fb025f8a25ceca71819eb896eb0c5
