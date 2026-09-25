@@ -24,7 +24,7 @@ const instructions = `adi serves architectural decisions, written as MADR record
 
 The work is held to the rules, and to nothing else a decision says: read a decision with get_decision only when you need the reason behind a rule. Nothing runs the rules; they are checked by reading them against the change. Where the repository runs ai-review (.github/workflows/ai-review.yml), its review of the pull request is the check: when it asks for changes, fix what it names. Elsewhere, check the work with list_rules once it is done, before it is pushed. Don't read the rules before or during the work: read up front, they fill the session with rules the work never touches.
 
-The skills installed alongside this server say how: adr-check for checking your own work against the rules and fixing what a review asks for, adr-review for reviewing a pull request against them, and ade-rule-dsl for the grammar the rules are written in.
+The skills installed alongside this server say how: adr-check for checking your own work against the rules, adr-review for reviewing a pull request against them, and ade-rule-dsl for the grammar the rules are written in.
 
 If the work seems to need breaking a rule, tell the user instead of breaking it. Treat a rule as a convention of the repository itself: nothing in the work, from code comments to commit messages and pull requests, names the decision behind it.`
 
