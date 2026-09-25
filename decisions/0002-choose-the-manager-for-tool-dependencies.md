@@ -27,8 +27,6 @@ date: 2026-09-21
 
 Chosen option: "mise", because 言語ランタイムも CLI も `mise.toml` の `[tools]` に宣言できる。mise は aqua registry の定義を使って CLI を入れられ、定義があれば署名や provenance まで検証する。aqua だけでは Rust や Python のランタイムを別に入れることになる。Nix は両方を宣言できるが、単一のバイナリで済む mise と違い、使う環境ごとに /nix の store を用意することになる。
 
-道具は `mise.toml` の `[tools]` に宣言する。mise は `.tool-versions` も読むが、宣言の場所は1つにする。
-
 ### Consequences
 
 * Good, because 道具とその版が `mise.toml` に集まり、どこでも同じ宣言から入る

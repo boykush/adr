@@ -7,7 +7,7 @@ date: 2026-09-25
 
 ## Context and Problem Statement
 
-外から来る skill・MCP サーバーの参照・agent は apm で宣言し、Claude Code と Codex の両方へ展開している。一方、そのリポジトリでしか使わない物もある。そのリポジトリだけの取り決めを持つ skill のように、2つ以上のリポジトリで使わないので外へ出す理由が無い物。
+外から来る skill・MCP サーバーの参照・agent は apm で宣言している。一方、そのリポジトリでしか使わない物もある。そのリポジトリだけの取り決めを持つ skill のように、2つ以上のリポジトリで使わないので外へ出す理由が無い物。
 
 置き場はエージェントごとに違う。Claude Code は `.claude/skills/`、Codex は `.agents/skills/` を読む。手で置くなら、同じ中身がエージェントの数だけ要る。
 
@@ -32,9 +32,6 @@ date: 2026-09-25
 ## Decision Outcome
 
 Chosen option: "`.apm/` に置き、`apm install` に各エージェントの置き場へ展開させる", because apm はリポジトリ自身を local の package として扱い、`.apm/` の中身を `targets` の各エージェントの置き場へ配って、配り先を `apm.lock.yaml` に記録する。外から来る package と自前の物が同じ宣言に並び、`apm audit` はどちらの手書きの変更も drift として見つける。直接置けば同じ中身がエージェントの数だけ増え、どれを直すのかを別に決めることになる。symlink は git に入れても環境によって実体にならず、エージェントが辿る保証も無い。ai-plugins へ出すのは、1つのリポジトリに閉じる物を2リポジトリに分け、直すたびに固定した commit を上げ直すことになる。
-
-* 自前の skill・agent・prompt は `.apm/` に置く。`.claude/` `.agents/` `.codex/` `.mcp.json` は `apm install` の生成物として commit し、手では書かない
-* `.apm/` の中身を配ることへの同意として、`apm.yml` に `includes` を書く
 
 ### Consequences
 
