@@ -1,0 +1,18 @@
+adr "0006" "Choose the home for repository-local AI plugins"
+
+# そのリポジトリだけで使う skill のソースは .apm/skills/ に置く。package を配る
+# リポジトリは package ごとに .apm/ を持つので、深さを問わず外す。
+path "SkillFile" = "**/SKILL.md"
+
+file "skill_sources_under_apm" {
+  SkillFile must not exist
+  exclude "**/.apm/**"
+  # apm install の生成先。ここには手で書かず、直すのは .apm/ 側。
+  exclude ".claude/skills/**"
+  exclude ".agents/skills/**"
+  # そのリポジトリ自身の中身でない場所
+  exclude "apm_modules/**"
+  exclude ".claude/worktrees/**"
+  exclude "**/node_modules/**"
+  severity error
+}
