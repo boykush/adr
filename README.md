@@ -67,7 +67,7 @@ adi mcp --model decisions --http 127.0.0.1:8080
 
 利用側が引くのは `list_rules`。ai-review を入れたリポジトリでは、PR のレビューが変更を求めたときにそのルールを引いて直し、それ以外では作業を終えて push する前に引いて変更と照合する。始めに引かないのは、作業に関わらないルールまでセッションに載ってノイズになるため。`list_decisions` と `get_decision` は、ルールの理由を知りたいときに使う。
 
-照らし方は MCP の面では語らず、[ai-plugins](https://github.com/boykush/ai-plugins) の `adr-remote-mcp` package の skill が持つ。作業したセッションが自分の変更を照らすのが `adr-check`、PR をレビューするのが `adr-review`（ai-review もこれに従う）。handshake の instructions は、いつ照らすかと、どの skill に従うかだけを言う。手順まで instructions に書くと全セッションの handshake に載り、2つの使い方も書き分けきれない。
+照らし方は MCP の面では語らず、[ai-plugins](https://github.com/boykush/ai-plugins) の `adr-remote-mcp` package の skill（`adr-check` / `adr-review`）が持つ。2つの違いは [package の README](https://github.com/boykush/ai-plugins/tree/main/plugins/adr-remote-mcp#adr-check-と-adr-review) に書いてある。handshake の instructions は、いつ照らすかと、どの skill に従うかだけを言う。
 
 | tool | 返すもの |
 | --- | --- |
