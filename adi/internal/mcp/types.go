@@ -28,9 +28,9 @@ type listDecisionsOutput struct {
 	Decisions []decisionSummaryJSON `json:"decisions"`
 }
 
-// decisionSummaryJSON is one row of the listing: enough to judge whether a
-// decision bears on the work, and the id to read it by. The body is left out
-// so the listing stays small enough to read before every push.
+// decisionSummaryJSON is one row of the listing: enough to find the decision
+// behind a rule, and the id to read it by. The body is left out, since a
+// decision is read in full only when its reasons are wanted.
 type decisionSummaryJSON struct {
 	ADRID  string   `json:"adr_id"`
 	Title  string   `json:"title"`
