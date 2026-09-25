@@ -18,6 +18,8 @@
 
 [MADR](https://adr.github.io/madr/) 4.0.0 で記録する。1決定1枚、`decisions/NNNN-title-with-dashes.md`。id はファイル名の数字、タイトルは `#` 見出し、status は frontmatter。他の節は MADR のテンプレートに従うが、Confirmation は書かない。守られているかを確かめる基準は、次に述べるルールが持つ。
 
+決定は選択肢の粒度で書き、選んだ選択肢の中の How は書かない。各リポジトリが満たす形はルールが、実装の手順は実装するリポジトリが持つので、How が変わっても決定は直さない。決定が変わるのは選び直すときで、そのときは新しい決定で置き換える。書き方と、書いた決定に手を入れてよい線は skill `write-adr` が持つ。
+
 ### ルール
 
 決定とは別に、各リポジトリのセッションが守ることを [ADE](https://github.com/phi42/ad-enforcement-tool) の DSL へ変換したものをルールと呼び、`NNNN-title.rule` として決定と同じ名前で隣に置く。決定はなぜを残し、ルールは何を満たせばよいかだけを言う。効くのは accepted の決定のルールだけ。DSL は ADE のものを使い、独自には作らない。

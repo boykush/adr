@@ -26,7 +26,7 @@ Claude Code と Codex を併用している。Codex は AGENTS.md を読む。Cl
 
 ## Decision Outcome
 
-Chosen option: "AGENTS.md だけを置き、CLAUDE.md は置かない", because CLAUDE.md が無ければ Claude Code も AGENTS.md を読むので、CLAUDE.md を置く理由がなくなった。`.claude/CLAUDE.md` と `CLAUDE.local.md` も、あると AGENTS.md が読まれなくなるので置かない。
+Chosen option: "AGENTS.md だけを置き、CLAUDE.md は置かない", because CLAUDE.md が無ければ Claude Code も AGENTS.md を読むので、CLAUDE.md を置く理由がなくなった。
 
 ### Consequences
 

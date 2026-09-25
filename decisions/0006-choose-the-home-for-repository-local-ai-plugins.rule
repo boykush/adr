@@ -16,3 +16,6 @@ file "skill_sources_under_apm" {
   exclude "**/node_modules/**"
   severity error
 }
+
+# .apm/ を持つなら、配ることへの明示の同意として apm.yml に includes を書く。
+# 書かなくても apm install は展開し、「.apm/ があるなら」は DSL に書けないので確かめない。
