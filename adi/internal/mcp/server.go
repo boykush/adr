@@ -17,15 +17,17 @@ import (
 const httpPath = "/mcp"
 
 // instructions ride the MCP handshake, so they reach the consuming agent on
-// every session. They carry what the payloads cannot say: that the agent
-// itself holds the work to a rule, where the grammar of a rule is documented,
-// that a decision can ask for more than its rule states, and that the work
-// treats a rule as the repository's own.
+// every session. They carry what the payloads cannot say: that the work is
+// held to the rules and when to read them, where their grammar is documented,
+// that a decision is read only for its reasons, and that the work treats a
+// rule as the repository's own.
 const instructions = `adi serves architectural decisions, written as MADR records, and their rules, written in ADE's rule DSL, read-only. Both are made and revised elsewhere; this server never changes them and exposes no tool that could.
 
-Once the work is done, before it is pushed to open or update a pull request, call list_rules and check the change against every rule it returns. Leave it until then: the rules check a finished change rather than steer the work, and read up front they fill the session with rules the work never touches. A rule names paths and assertions about whichever repository it is read in, so it applies as written to the one you are working in. Nothing runs these rules: you are the one who checks the work against them. Read a rule's syntax against ADE's DSL reference rather than guessing at it: the ade-rule-dsl skill, installed alongside this server, carries it.
+The work is held to the rules. A rule names paths and assertions about whichever repository it is read in, so it applies as written to the one you are working in. Nothing runs these rules: they are checked by reading them against the change. Read a rule's syntax against ADE's DSL reference rather than guessing at it: the ade-rule-dsl skill, installed alongside this server, carries it. list_rules returns the rules of accepted decisions only. A decision says why its rule exists: read it with get_decision, finding it through list_decisions if need be, only when you need that reason.
 
-A rule holds only the part of a decision that ADE's DSL can state. The decision says why, and can ask for more than its rule expresses or have no rule at all, so call list_decisions then as well and read the ones that bear on the change with get_decision. Only an accepted decision binds: a proposed one is still being argued, and a rejected, deprecated or superseded one says where the decision went. The pull request's review checks the change against both again: fix what it finds breaking one. If the work seems to need breaking a rule or a decision, tell the user instead of breaking it.
+Don't read the rules before or during the work: read up front, they fill the session with rules the work never touches. Where the repository runs ai-review (.github/workflows/ai-review.yml), its review of the pull request is the check: leave it to that review, and when it asks for changes, read the rules it names with list_rules and fix the work. Where nothing reviews the pull request against the rules, call list_rules once the work is done, before it is pushed, and check the change against every rule it returns. If you were asked to review a pull request against the rules, you are that review: read them all.
+
+If the work seems to need breaking a rule, tell the user instead of breaking it.
 
 Treat a rule as a convention of the repository itself: nothing in the work, from code comments to commit messages and pull requests, names the decision behind it.`
 
