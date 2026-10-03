@@ -2,20 +2,22 @@ package mcp
 
 import (
 	"context"
-	"os"
 	"strings"
 
 	"github.com/boykush/adr/adi/internal/decision"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// tagsHeader and tagsEnv carry the tags a repository declares, comma-separated.
-// One HTTP server answers every repository, so each request brings its own in
-// a header; a stdio server belongs to one repository and reads its environment.
-const (
-	tagsHeader = "Adi-Tags"
-	tagsEnv    = "ADI_TAGS"
-)
+// tagsHeader and stdioEnv's Tags carry the tags a repository declares,
+// comma-separated. One HTTP server answers every repository, so each request
+// brings its own in a header; a stdio server belongs to one repository and
+// reads its environment.
+const tagsHeader = "Adi-Tags"
+
+// stdioEnv is what a stdio server reads of its environment.
+type stdioEnv struct {
+	Tags string `env:"ADI_TAGS"`
+}
 
 // registerTools wires the read surface. There is no writing tool. Only the
 // decision listing narrows, by the tags the repository declares: a rule already
@@ -57,7 +59,7 @@ func (s *Server) listDecisions(_ context.Context, req *mcpsdk.CallToolRequest, _
 	if err != nil {
 		return nil, listDecisionsOutput{}, err
 	}
-	tags := declaredTags(req.Extra)
+	tags := s.declaredTags(req.Extra)
 	summaries := make([]decisionSummaryJSON, 0, len(decisions))
 	for _, d := range decisions {
 		// A repository that declares nothing has given no ground to leave a
@@ -89,11 +91,11 @@ func (s *Server) getDecision(_ context.Context, _ *mcpsdk.CallToolRequest, in ge
 // from what its transport passed along with it. Over HTTP only the request's
 // header counts: the server's own environment describes no repository of the
 // many it answers.
-func declaredTags(extra *mcpsdk.RequestExtra) []string {
+func (s *Server) declaredTags(extra *mcpsdk.RequestExtra) []string {
 	if extra != nil && extra.Header != nil {
 		return splitTags(extra.Header.Get(tagsHeader))
 	}
-	return splitTags(os.Getenv(tagsEnv))
+	return splitTags(s.stdio.Tags)
 }
 
 func splitTags(raw string) []string {

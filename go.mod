@@ -3,6 +3,7 @@ module github.com/boykush/adr
 go 1.27.1
 
 require (
+	github.com/caarlos0/env/v11 v11.4.1
 	github.com/modelcontextprotocol/go-sdk v1.8.0
 	github.com/phi42/ad-enforcement-tool v1.0.0
 	github.com/spf13/cobra v1.10.2

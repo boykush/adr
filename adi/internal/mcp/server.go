@@ -6,9 +6,11 @@ package mcp
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/caarlos0/env/v11"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -43,6 +45,9 @@ type Config struct {
 type Server struct {
 	cfg     Config
 	version string
+	// stdio is what the server read of its own environment, which it does only
+	// to serve over stdio.
+	stdio stdioEnv
 }
 
 func NewServer(cfg Config, version string) *Server {
@@ -50,9 +55,25 @@ func NewServer(cfg Config, version string) *Server {
 }
 
 // Run serves over stdio, blocking until the client disconnects or ctx is
-// cancelled.
+// cancelled. A stdio server belongs to one repository, so only here does the
+// server read its own environment.
 func (s *Server) Run(ctx context.Context) error {
+	if err := s.readEnv(env.Options{}); err != nil {
+		return err
+	}
 	return s.mcpServer().Run(ctx, &mcpsdk.StdioTransport{})
+}
+
+// readEnv reads stdioEnv from the environment opts names, the process's unless
+// it names another. Split out so tests can hand it a map and leave the
+// process's environment alone.
+func (s *Server) readEnv(opts env.Options) error {
+	stdio, err := env.ParseAsWithOptions[stdioEnv](opts)
+	if err != nil {
+		return fmt.Errorf("read the environment: %w", err)
+	}
+	s.stdio = stdio
+	return nil
 }
 
 // RunHTTP serves over Streamable HTTP at addr, blocking until ctx is cancelled.
@@ -100,7 +121,7 @@ func (s *Server) mcpServer() *mcpsdk.Server {
 		&mcpsdk.ServerOptions{Instructions: instructions},
 	)
 	if tp := s.cfg.TracerProvider; tp != nil {
-		srv.AddReceivingMiddleware(traceRequests(tp))
+		srv.AddReceivingMiddleware(s.traceRequests(tp))
 	}
 	s.registerTools(srv)
 	return srv

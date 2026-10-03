@@ -9,9 +9,20 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/caarlos0/env/v11"
 )
 
 const serviceName = "adr-under-test"
+
+// The variables, spelled as a deployment sets them rather than taken from
+// otlpEnv, so that the tests hold the declaration to the names.
+const (
+	endpointEnv       = "OTEL_EXPORTER_OTLP_ENDPOINT"
+	tracesEndpointEnv = "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+	protocolEnv       = "OTEL_EXPORTER_OTLP_PROTOCOL"
+	tracesProtocolEnv = "OTEL_EXPORTER_OTLP_TRACES_PROTOCOL"
+)
 
 // The SDK reads the service name once a process, so it is named before the
 // first test rather than by the test that looks for it.
@@ -22,12 +33,14 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// setEnv gives the test the OTLP environment it names and none of the one the
-// tests run in, where a collector may well be named.
-func setEnv(t *testing.T, env map[string]string) {
+// setEnv gives the process the OTLP environment the test names and none of the
+// one the tests run in, where a collector may well be named. It is for a test
+// that exports: the exporter reads the endpoint from the process's environment,
+// where a map handed to adi does not reach.
+func setEnv(t *testing.T, environment map[string]string) {
 	t.Helper()
 	for _, name := range []string{endpointEnv, tracesEndpointEnv, protocolEnv, tracesProtocolEnv} {
-		t.Setenv(name, env[name])
+		t.Setenv(name, environment[name])
 	}
 }
 
@@ -68,13 +81,26 @@ func exported(t *testing.T, received <-chan posted) posted {
 // TestNoEndpointNoProvider is the server nobody pointed at a collector: local
 // use and stdio, which must not start exporting to a default.
 func TestNoEndpointNoProvider(t *testing.T) {
-	setEnv(t, nil)
-	tp, err := NewTracerProvider(context.Background(), "test")
-	if err != nil {
-		t.Fatalf("NewTracerProvider: %v", err)
+	cases := []struct {
+		name string
+		env  map[string]string
+	}{
+		// An empty map, not a missing one, which would have the process's
+		// environment read.
+		{name: "unset", env: map[string]string{}},
+		// A variable named and left blank points at no collector either.
+		{name: "blank", env: map[string]string{endpointEnv: "", tracesEndpointEnv: ""}},
 	}
-	if tp != nil {
-		t.Error("got a tracer provider with no endpoint in the environment")
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			tp, err := newTracerProvider(context.Background(), "test", env.Options{Environment: c.env})
+			if err != nil {
+				t.Fatalf("NewTracerProvider: %v", err)
+			}
+			if tp != nil {
+				t.Error("got a tracer provider with no endpoint in the environment")
+			}
+		})
 	}
 }
 
@@ -149,9 +175,8 @@ func TestAnotherProtocolIsRefused(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			ctx := context.Background()
 			c.env[endpointEnv] = "http://collector.invalid:4317"
-			setEnv(t, c.env)
 
-			tp, err := NewTracerProvider(ctx, "test")
+			tp, err := newTracerProvider(ctx, "test", env.Options{Environment: c.env})
 			if !c.refused {
 				if err != nil {
 					t.Fatalf("NewTracerProvider: %v", err)

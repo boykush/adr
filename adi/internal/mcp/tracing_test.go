@@ -199,7 +199,7 @@ func TestSpansSayHowAndByWhomTheServerWasReached(t *testing.T) {
 	}
 
 	s, recorder = newTracedServer(t)
-	t.Setenv(tagsEnv, "go")
+	declareInEnv(t, s, "go")
 	if _, err := connect(t, s).ListTools(ctx, nil); err != nil {
 		t.Fatalf("list tools over stdio: %v", err)
 	}

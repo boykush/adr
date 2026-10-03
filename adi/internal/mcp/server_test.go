@@ -11,14 +11,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/caarlos0/env/v11"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 func newTestServer(t *testing.T) *Server {
 	t.Helper()
-	// A declaration in the environment running the tests would narrow every
-	// listing here.
-	t.Setenv(tagsEnv, "")
 	dir := t.TempDir()
 	files := map[string]string{
 		"0001-first.md":    "---\nstatus: accepted\ntags: [product]\n---\n\n# First\n\n## Context and Problem Statement\n\nthe first one\n",
@@ -33,6 +31,16 @@ func newTestServer(t *testing.T) *Server {
 		}
 	}
 	return NewServer(Config{ModelDir: dir}, "test")
+}
+
+// declareInEnv has s read tags the way a stdio server does, from ADI_TAGS in
+// its environment. A map stands in for that environment, so the one running
+// the tests is neither read nor changed.
+func declareInEnv(t *testing.T, s *Server, tags string) {
+	t.Helper()
+	if err := s.readEnv(env.Options{Environment: map[string]string{"ADI_TAGS": tags}}); err != nil {
+		t.Fatalf("read the environment: %v", err)
+	}
 }
 
 func connect(t *testing.T, s *Server) *mcpsdk.ClientSession {
@@ -219,7 +227,7 @@ func TestEndToEnd(t *testing.T) {
 func TestDeclaredTagsNarrowTheDecisionsOnly(t *testing.T) {
 	ctx := context.Background()
 	s := newTestServer(t)
-	t.Setenv(tagsEnv, " Go ")
+	declareInEnv(t, s, " Go ")
 	cs := connect(t, s)
 
 	// ADR-0001 carries product alone, so it drops out. ADR-0003 has no tags and
@@ -257,7 +265,7 @@ func TestHTTPTransport(t *testing.T) {
 	s := newTestServer(t)
 	// The server answers every repository, so its own environment declares
 	// nothing on their behalf.
-	t.Setenv(tagsEnv, "go")
+	declareInEnv(t, s, "go")
 
 	if got, want := listDecisionIDs(t, connectHTTP(t, s, nil)), []string{"ADR-0001", "ADR-0002", "ADR-0003"}; !slices.Equal(got, want) {
 		t.Errorf("declaring nothing: decisions = %v, want %v", got, want)
