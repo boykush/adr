@@ -54,12 +54,12 @@ var traceContext = propagation.TraceContext{}
 // named and attributed after OpenTelemetry's semantic conventions for MCP.
 // Over HTTP every message is the same POST, so only here can a span tell the
 // method and the tool apart.
-func traceRequests(tp trace.TracerProvider) mcpsdk.Middleware {
+func (s *Server) traceRequests(tp trace.TracerProvider) mcpsdk.Middleware {
 	tracer := tp.Tracer(tracerName, trace.WithSchemaURL(semconv.SchemaURL))
 	return func(next mcpsdk.MethodHandler) mcpsdk.MethodHandler {
 		return func(ctx context.Context, method string, req mcpsdk.Request) (mcpsdk.Result, error) {
 			attrs := append(transport(req), semconv.McpMethodNameKey.String(method))
-			if tags := declaredTags(req.GetExtra()); len(tags) > 0 {
+			if tags := s.declaredTags(req.GetExtra()); len(tags) > 0 {
 				attrs = append(attrs, tagsKey.StringSlice(recordedTags(tags)))
 			}
 			var tool string
