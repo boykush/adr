@@ -10,6 +10,7 @@ import (
 	"time"
 
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // httpPath is where the Streamable HTTP transport is mounted. Consumers point
@@ -32,6 +33,9 @@ If the work seems to need breaking a rule, tell the user instead of breaking it.
 // than at startup, so a decision edited on disk takes effect without a restart.
 type Config struct {
 	ModelDir string
+	// TracerProvider, when set, is given a span for every request the server
+	// receives. Left nil, nothing is traced.
+	TracerProvider trace.TracerProvider
 }
 
 // Server exposes the model under Config over MCP. version is the adi build,
@@ -95,6 +99,9 @@ func (s *Server) mcpServer() *mcpsdk.Server {
 		&mcpsdk.Implementation{Name: "adi", Version: s.version},
 		&mcpsdk.ServerOptions{Instructions: instructions},
 	)
+	if tp := s.cfg.TracerProvider; tp != nil {
+		srv.AddReceivingMiddleware(traceRequests(tp))
+	}
 	s.registerTools(srv)
 	return srv
 }

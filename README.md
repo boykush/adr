@@ -95,6 +95,7 @@ ADG の MCP が持つ `get_dsl_reference` と `validate_rule` は持たない。
 - Kubernetes の manifest は置かない。infrastructure-as-code の `applications/remote-mcp-server/` に wiki と並べて載せる
 - image は `ghcr.io/boykush/adr-mcp-server`。`.github/workflows/adr-mcp-server-image.yml` が main への push で `main` と `<commit 7桁>` の2つの tag を push する
 - ENTRYPOINT は `adi mcp --model decisions --http`。呼び出し側が渡すのは listen アドレスだけ（既定 `0.0.0.0:8080`）
+- トレースは OpenTelemetry の標準の環境変数で有効にする。`OTEL_EXPORTER_OTLP_ENDPOINT`（または `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`）があれば、MCP のリクエストごとの span を OTLP/HTTP で送る。無ければ何も送らない。span の名前と属性は OpenTelemetry の [MCP の semantic conventions](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/mcp.md) に従い、service 名は `OTEL_SERVICE_NAME` から取る。span には tool の引数、tool が返したエラーの文面、リポジトリが宣言した tag（`adi.tags`）も載る
 
 ## 展望
 

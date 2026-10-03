@@ -57,7 +57,7 @@ func (s *Server) listDecisions(_ context.Context, req *mcpsdk.CallToolRequest, _
 	if err != nil {
 		return nil, listDecisionsOutput{}, err
 	}
-	tags := declaredTags(req)
+	tags := declaredTags(req.Extra)
 	summaries := make([]decisionSummaryJSON, 0, len(decisions))
 	for _, d := range decisions {
 		// A repository that declares nothing has given no ground to leave a
@@ -85,12 +85,13 @@ func (s *Server) getDecision(_ context.Context, _ *mcpsdk.CallToolRequest, in ge
 	}, nil
 }
 
-// declaredTags returns the tags the repository behind req declares. Over HTTP
-// only the request's header counts: the server's own environment describes no
-// repository of the many it answers.
-func declaredTags(req *mcpsdk.CallToolRequest) []string {
-	if req != nil && req.Extra != nil && req.Extra.Header != nil {
-		return splitTags(req.Extra.Header.Get(tagsHeader))
+// declaredTags returns the tags the repository behind a request declares, read
+// from what its transport passed along with it. Over HTTP only the request's
+// header counts: the server's own environment describes no repository of the
+// many it answers.
+func declaredTags(extra *mcpsdk.RequestExtra) []string {
+	if extra != nil && extra.Header != nil {
+		return splitTags(extra.Header.Get(tagsHeader))
 	}
 	return splitTags(os.Getenv(tagsEnv))
 }
