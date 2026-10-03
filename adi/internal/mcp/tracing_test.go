@@ -2,6 +2,8 @@ package mcp
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"maps"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +11,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
+	"github.com/modelcontextprotocol/go-sdk/jsonrpc"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -104,20 +107,13 @@ func TestRequestsAreTraced(t *testing.T) {
 		name   string
 		attrs  map[attribute.Key]string
 		status codes.Code
-		// reason is what the status has to say of the failure.
-		reason string
 	}{
 		{name: "tools/list", attrs: map[attribute.Key]string{"mcp.method.name": "tools/list"}},
-		// The tool takes no arguments, so the span keeps none.
 		{name: "tools/call list_rules", attrs: toolCall("list_rules", nil)},
-		// The tool answered, and its answer was the failure. The span is the
-		// only place that says why: adi keeps no log.
-		{
-			name:   "tools/call get_decision",
-			attrs:  toolCall("get_decision", map[attribute.Key]string{"gen_ai.tool.call.arguments": `{"adr_id":"99"}`, "error.type": "tool_error"}),
-			status: codes.Error,
-			reason: "no decision ADR-0099",
-		},
+		// The tool answered, and its answer was the failure. Nobody asked this
+		// server for what its callers send, so the span keeps neither the id
+		// it was called with nor the error that quotes it.
+		{name: "tools/call get_decision", attrs: toolCall("get_decision", map[attribute.Key]string{"error.type": "tool_error"}), status: codes.Error},
 		// No tool was reached, so none is in the name: a caller can ask for any
 		// name it likes. Asking for one that is not there is its fault, not the
 		// server's failure.
@@ -142,8 +138,8 @@ func TestRequestsAreTraced(t *testing.T) {
 		if span.Parent().IsValid() {
 			t.Errorf("%s: has a parent, %v", w.name, span.Parent())
 		}
-		if got := span.Status(); got.Code != w.status || !strings.Contains(got.Description, w.reason) {
-			t.Errorf("%s: status = %v %q, want %v %q", w.name, got.Code, got.Description, w.status, w.reason)
+		if got := span.Status(); got.Code != w.status || got.Description != "" {
+			t.Errorf("%s: status = %v %q, want %v and no description", w.name, got.Code, got.Description, w.status)
 		}
 		w.attrs["network.transport"] = "tcp"
 		w.attrs["network.protocol.name"] = "http"
@@ -241,6 +237,85 @@ func TestSpanContinuesTheCallersTrace(t *testing.T) {
 	}
 }
 
+// kept returns content as a span has it: whole on a server asked to capture
+// what its callers send, and not at all on any other.
+func kept(capture bool, content string) string {
+	if capture {
+		return content
+	}
+	return ""
+}
+
+// TestWhatTheCallerSendsIsKeptOnlyOnRequest calls a tool with arguments it
+// answers with an error, which leaves a span the most of the caller's to keep.
+func TestWhatTheCallerSendsIsKeptOnlyOnRequest(t *testing.T) {
+	ctx := context.Background()
+	for _, capture := range []bool{false, true} {
+		t.Run(fmt.Sprintf("capture=%t", capture), func(t *testing.T) {
+			s, recorder := newTracedServer(t)
+			s.cfg.CaptureContent = capture
+			cs := connectHTTP(t, s, http.Header{"Adi-Tags": {"go"}})
+
+			if _, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "list_rules", Arguments: map[string]any{}}); err != nil {
+				t.Fatalf("call list_rules: %v", err)
+			}
+			// The tool takes no arguments, so even on request there are none
+			// to keep.
+			if arguments, ok := spanAttributes(lastSpan(t, recorder))["gen_ai.tool.call.arguments"]; ok {
+				t.Errorf("list_rules: gen_ai.tool.call.arguments = %s, want none", arguments)
+			}
+
+			if res, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "get_decision", Arguments: map[string]any{"adr_id": "99"}}); err != nil || !res.IsError {
+				t.Fatalf("get_decision of an absent id: err = %v, want a result that is an error", err)
+			}
+			span := lastSpan(t, recorder)
+			attrs := spanAttributes(span)
+			if got, want := attrs["gen_ai.tool.call.arguments"], kept(capture, `{"adr_id":"99"}`); got != want {
+				t.Errorf("gen_ai.tool.call.arguments = %q, want %q", got, want)
+			}
+			// The error names the id it was asked for, so what the status says
+			// of the failure is the caller's as much as the arguments are.
+			if got, want := span.Status().Description, kept(capture, "no decision ADR-0099 in "+s.cfg.ModelDir); got != want {
+				t.Errorf("status description = %q, want %q", got, want)
+			}
+			// That the call failed is not the caller's to withhold, and neither
+			// is what the repository declared of itself.
+			if got := span.Status().Code; got != codes.Error || attrs["error.type"] != "tool_error" {
+				t.Errorf("status = %v, error.type = %q, want an error of the tool's", got, attrs["error.type"])
+			}
+			if got, want := attrs["adi.tags"], `["go"]`; got != want {
+				t.Errorf("adi.tags = %s, want %s", got, want)
+			}
+		})
+	}
+}
+
+// TestWhyTheServerFailedIsKeptOnlyOnRequest covers the error that is not a
+// tool's answer, which reaches the span another way. No request makes adi fail
+// like that, so a handler that does stands in for the server's.
+func TestWhyTheServerFailedIsKeptOnlyOnRequest(t *testing.T) {
+	failure := &jsonrpc.Error{Code: jsonrpc.CodeInternalError, Message: `no way to answer "99"`}
+	failing := func(context.Context, string, mcpsdk.Request) (mcpsdk.Result, error) { return nil, failure }
+	for _, capture := range []bool{false, true} {
+		t.Run(fmt.Sprintf("capture=%t", capture), func(t *testing.T) {
+			s, recorder := newTracedServer(t)
+			s.cfg.CaptureContent = capture
+			request := &mcpsdk.CallToolRequest{Params: &mcpsdk.CallToolParamsRaw{Name: "get_decision"}}
+			if _, err := s.traceRequests(s.cfg.TracerProvider)(failing)(context.Background(), "tools/call", request); !errors.Is(err, failure) {
+				t.Fatalf("err = %v, want the handler's own", err)
+			}
+
+			span := lastSpan(t, recorder)
+			if got, want := span.Status().Description, kept(capture, failure.Message); got != want {
+				t.Errorf("status description = %q, want %q", got, want)
+			}
+			if got, errorType := span.Status().Code, spanAttributes(span)["error.type"]; got != codes.Error || errorType != "-32603" {
+				t.Errorf("status = %v, error.type = %q, want an error of the server's", got, errorType)
+			}
+		})
+	}
+}
+
 // TestWhatTheCallerSendsIsKeptInBounds sends, in every place a span reads the
 // request, more than a span should hold and a byte that is not UTF-8. One such
 // byte in a span fails the export of every span batched with it.
@@ -256,6 +331,8 @@ func TestWhatTheCallerSendsIsKeptInBounds(t *testing.T) {
 		`{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_decision","arguments":{"adr_id":"` + long + `"}}}`,
 	} {
 		s, recorder := newTracedServer(t)
+		// A span has the most to bound when it keeps all the caller sends.
+		s.cfg.CaptureContent = true
 		postMessage(t, s, http.Header{"Adi-Tags": {tags}}, message)
 		span := lastSpan(t, recorder)
 

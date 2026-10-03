@@ -38,6 +38,10 @@ type Config struct {
 	// TracerProvider, when set, is given a span for every request the server
 	// receives. Left nil, nothing is traced.
 	TracerProvider trace.TracerProvider
+	// CaptureContent lets a span keep what the caller sent. The conventions the
+	// spans follow leave a tool call's arguments out unless they are asked for,
+	// and the text of an error goes with them: it quotes them back.
+	CaptureContent bool
 }
 
 // Server exposes the model under Config over MCP. version is the adi build,

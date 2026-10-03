@@ -21,7 +21,9 @@ import (
 const tracerName = "github.com/boykush/adr/adi/internal/mcp"
 
 // tagsKey holds the tags the repository behind a request declares. It is adi's
-// own: no convention names what a caller says of itself this way.
+// own: no convention names what a caller says of itself this way. A span keeps
+// them without the opt-in the content of a call waits for: they say which
+// repository called, not what it sent.
 const tagsKey = attribute.Key("adi.tags")
 
 // toolError is the error.type OpenTelemetry's MCP conventions give a tool call
@@ -68,7 +70,7 @@ func (s *Server) traceRequests(tp trace.TracerProvider) mcpsdk.Middleware {
 				attrs = append(attrs, semconv.GenAIOperationNameExecuteTool, semconv.GenAIToolName(fromCaller(tool)))
 				// A call to a tool that takes nothing sends an empty object,
 				// which says nothing worth keeping.
-				if arguments := string(params.Arguments); arguments != "" && arguments != "{}" {
+				if arguments := string(params.Arguments); s.cfg.CaptureContent && arguments != "" && arguments != "{}" {
 					attrs = append(attrs, semconv.GenAIToolCallArgumentsKey.String(fromCaller(arguments)))
 				}
 			}
@@ -84,7 +86,7 @@ func (s *Server) traceRequests(tp trace.TracerProvider) mcpsdk.Middleware {
 				span.SetAttributes(semconv.McpProtocolVersion(version))
 			}
 			if err != nil {
-				recordError(span, err)
+				s.recordError(span, err)
 				return res, err
 			}
 			// The tool joins the name only once the call has reached it. Until
@@ -95,7 +97,7 @@ func (s *Server) traceRequests(tp trace.TracerProvider) mcpsdk.Middleware {
 			}
 			if result, ok := res.(*mcpsdk.CallToolResult); ok && result != nil && result.IsError {
 				span.SetAttributes(semconv.ErrorTypeKey.String(toolError))
-				span.SetStatus(codes.Error, toolErrorText(result))
+				span.SetStatus(codes.Error, s.reason(result.GetError()))
 			}
 			return res, nil
 		}
@@ -154,7 +156,7 @@ func protocolVersion(req mcpsdk.Request, res mcpsdk.Result) string {
 // recordError marks span for a request that ended in err. A JSON-RPC error
 // carries a code, and the conventions say which codes fail the server; an
 // error without one is the server's own failure.
-func recordError(span trace.Span, err error) {
+func (s *Server) recordError(span trace.Span, err error) {
 	var rpcErr *jsonrpc.Error
 	if errors.As(err, &rpcErr) {
 		code := strconv.FormatInt(rpcErr.Code, 10)
@@ -166,16 +168,19 @@ func recordError(span trace.Span, err error) {
 	} else {
 		span.SetAttributes(semconv.ErrorType(err))
 	}
-	span.SetStatus(codes.Error, fromCaller(err.Error()))
+	span.SetStatus(codes.Error, s.reason(err))
 }
 
-// toolErrorText returns what the tool said went wrong. adi logs nothing, so
-// the span is the one place a model that fails to load is reported.
-func toolErrorText(result *mcpsdk.CallToolResult) string {
-	if err := result.GetError(); err != nil {
-		return fromCaller(err.Error())
+// reason returns what a span's status says of the failure err: nothing, unless
+// the server was asked to keep what callers send. An error quotes its request,
+// be it the id of a decision that is not there or arguments that do not fit.
+// adi logs nothing, so without the opt-in no place says why a model fails to
+// load.
+func (s *Server) reason(err error) string {
+	if err == nil || !s.cfg.CaptureContent {
+		return ""
 	}
-	return ""
+	return fromCaller(err.Error())
 }
 
 // recordedTags returns the declared tags as a span keeps them.
