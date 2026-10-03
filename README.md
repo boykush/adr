@@ -48,7 +48,7 @@ frontmatter の `tags` に語を並べると、その決定は、同じ語のど
 
 MADR に標準の欄は無いので、adr org の [ADG](https://github.com/adr/ad-guidance-tool) が決定の frontmatter に持つ `tags` に揃えた。MADR 本家がカテゴリに使うサブフォルダでは分けない。1つの決定が1つのカテゴリにしか入らず、`ADR-NNNN` の番号もリポジトリの中で一意でなくなるため。
 
-何を軸に語を立てるかはまだ決めていないので、今はどの決定にも付けない。
+語は、決定の話題ではなく、リポジトリの性質で立てる。宣言するのはリポジトリの側で、自分について言えることしか宣言できないため。最初の軸は、リポジトリが書かれている言語（`go`）。
 
 ## 配る道具
 
@@ -104,4 +104,5 @@ ADG の MCP が持つ `get_dsl_reference` と `validate_rule` は持たない。
 - [x] infrastructure-as-code の remote-mcp-server に載せる
 - [x] レビュー CI から remote MCP を引いて、ルールに照らして差分を見る（[boykush/workflows](https://github.com/boykush/workflows) の ai-review。入れるかはリポジトリごと）
 - [ ] dotfiles のグローバル設定から参照させる
-- [ ] [tag](#タグ) の軸と語彙を決め、決定に付けて、各リポジトリが宣言する
+- [x] [tag](#タグ) の軸を決め、関わるリポジトリが限られる決定に付ける
+- [ ] 各リポジトリが、自分に当てはまる [tag](#タグ) を宣言する

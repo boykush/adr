@@ -1,0 +1,17 @@
+adr "0007" "Choose how Go programs read environment variables"
+
+# 環境変数は github.com/caarlos0/env の struct に宣言して読む。「環境変数を読むなら」という
+# 条件は DSL に書けないので、宣言の外で読む呼び出しが無いことを assertion にする。
+path "GoSource" = "**/*.go"
+
+file "env_vars_via_caarlos0_env" {
+  GoSource must not contain "regex:\\bos\\.(Getenv|LookupEnv)\\("
+  # viper が環境変数を key に結び付ける呼び出し。設定ファイルだけを読む viper は対象にしない
+  GoSource must not contain "regex:\\.(AutomaticEnv|BindEnv)\\("
+  # テストが環境変数を見るのは、プログラムが設定を受け取ることではない
+  exclude "**/*_test.go"
+  # worktree は別ブランチの checkout で、vendor/ は依存パッケージの中身
+  exclude ".claude/worktrees/**"
+  exclude "**/vendor/**"
+  severity error
+}
