@@ -49,9 +49,11 @@ are listed whatever it declares.
 Requests are traced when OpenTelemetry's standard variables name a collector:
 with OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_TRACES_ENDPOINT set, each
 MCP request is exported as a span over OTLP/HTTP, under the service name in
-OTEL_SERVICE_NAME. A span carries the arguments of the tool call it reports and
-the tags the repository declared. With neither variable set, nothing is
-exported.`,
+OTEL_SERVICE_NAME. With neither variable set, nothing is exported.
+
+A span carries the tags the repository declared. The arguments of the tool call
+it reports and the text of an error are left out unless
+OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT is true.`,
 	Args: cobra.NoArgs,
 	// A server failure is not a misuse of the command.
 	SilenceUsage: true,
@@ -67,6 +69,7 @@ exported.`,
 		}
 		if tp != nil {
 			cfg.TracerProvider = tp
+			cfg.CaptureContent = telemetry.CapturesContent()
 			// Spans leave in batches, so the signal that ends the process has
 			// to end the server instead, leaving time to send the last ones.
 			var stop context.CancelFunc
