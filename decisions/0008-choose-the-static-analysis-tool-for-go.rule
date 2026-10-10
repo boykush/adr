@@ -1,0 +1,10 @@
+adr "0008" "Choose the static analysis tool for Go"
+
+# 「Go のリポジトリなら」という条件は DSL に書けない。go.mod を持たないリポジトリは対象にしない。
+# golangci-lint の設定は .golangci.yml / .yaml / .toml / .json のどれでもよい。
+path "GolangciConfig" = ".golangci.*"
+
+file "golangci_lint_configured" {
+  GolangciConfig must exist
+  severity error
+}
