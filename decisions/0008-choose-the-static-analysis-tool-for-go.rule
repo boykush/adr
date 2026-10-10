@@ -1,0 +1,9 @@
+adr "0008" "Choose the static analysis tool for Go"
+
+# golangci-lint の設定は .golangci.yml / .yaml / .toml / .json のどれでもよい。
+path "GolangciConfig" = ".golangci.*"
+
+file "golangci_lint_configured" {
+  GolangciConfig must exist
+  severity error
+}
