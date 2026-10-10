@@ -50,6 +50,8 @@ MADR に標準の欄は無いので、adr org の [ADG](https://github.com/adr/a
 
 語は、決定の話題ではなく、リポジトリの性質で立てる。宣言するのはリポジトリの側で、自分について言えることしか宣言できないため。最初の軸は、リポジトリが書かれている言語（`go`）。
 
+リポジトリがどの語に当てはまるかは、[github-management](https://github.com/boykush/github-management) の catalog で、そのリポジトリの Component の `metadata.tags` に書く。リポジトリが何であるかを1箇所に置き、宣言はそこから運ぶ。
+
 ## 配る道具
 
 `adi`（Architectural Decision Injection）。`adi/` にある。
@@ -81,7 +83,9 @@ adi mcp --model decisions --http 127.0.0.1:8080
 
 `list_rules` も絞るのは、パスでは「Go のリポジトリなら」のようなリポジトリの性質を言えないため。tag の付いた決定のルールは、それを宣言したリポジトリにだけ届けて、性質の条件をルールの外で持つ。`get_decision` は絞らず、id で指された決定をそのまま返す。
 
-apm で `adr` サーバーを受け取るリポジトリが宣言するときは、自分の `apm.yml` の `dependencies.mcp` に `adr` を `headers` 付きで宣言し直す。apm は同じ名前のサーバーを root の宣言を優先して1つにするので、package の宣言が置き換わる。値は `${VAR}` にせず直接書く。apm は `${VAR}` を install 時に解決して生成物へ焼き込むので、宣言の出どころが install した環境になる。
+PR のレビューでは、ai-review（[boykush/workflows](https://github.com/boykush/workflows)）が catalog からレビューするリポジトリの tag を読み、`Adi-Tags` として宣言する。リポジトリの側に書くものは無い。
+
+手元のセッションで、apm で `adr` サーバーを受け取るリポジトリが宣言するときは、自分の `apm.yml` の `dependencies.mcp` に `adr` を `headers` 付きで宣言し直す。apm は同じ名前のサーバーを root の宣言を優先して1つにするので、package の宣言が置き換わる。値は `${VAR}` にせず直接書く。apm は `${VAR}` を install 時に解決して生成物へ焼き込むので、宣言の出どころが install した環境になる。
 
 **書き込みの面は出さない。** 認証も TLS も持たないサーバーを前段越しに公開するので、エージェントは読めるが状態を変えられない形を守る。`.rule` はパースも実行もせず、テキストとして渡すだけ。
 
@@ -105,4 +109,4 @@ ADG の MCP が持つ `get_dsl_reference` と `validate_rule` は持たない。
 - [x] レビュー CI から remote MCP を引いて、ルールに照らして差分を見る（[boykush/workflows](https://github.com/boykush/workflows) の ai-review。入れるかはリポジトリごと）
 - [ ] dotfiles のグローバル設定から参照させる
 - [x] [tag](#タグ) の軸を決め、関わるリポジトリが限られる決定に付ける
-- [ ] 各リポジトリが、自分に当てはまる [tag](#タグ) を宣言する
+- [x] 各リポジトリに当てはまる [tag](#タグ) を catalog に書き、ai-review がそこから宣言する
