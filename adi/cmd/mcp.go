@@ -42,9 +42,10 @@ can share a single server by pointing its MCP client at <addr>/mcp.
 The model is never embedded in the binary: --model says where to read it, which
 is what lets the decisions ship and change independently of the tool.
 
-A repository narrows the decisions it lists by declaring tags, comma-separated:
-in the Adi-Tags header over HTTP, or in ADI_TAGS over stdio. Untagged decisions
-are listed whatever it declares.
+A repository receives the decisions and rules that bear on it by declaring tags,
+comma-separated: in the Adi-Tags header over HTTP, or in ADI_TAGS over stdio.
+Untagged decisions and their rules reach every repository; a tagged one reaches
+only the repositories that declare one of its tags.
 
 Requests are traced when OpenTelemetry's standard variables name a collector:
 with OTEL_EXPORTER_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_TRACES_ENDPOINT set, each

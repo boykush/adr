@@ -19,11 +19,14 @@ func newTestServer(t *testing.T) *Server {
 	t.Helper()
 	dir := t.TempDir()
 	files := map[string]string{
-		"0001-first.md":    "---\nstatus: accepted\ntags: [product]\n---\n\n# First\n\n## Context and Problem Statement\n\nthe first one\n",
+		"0001-first.md":    "---\nstatus: accepted\n---\n\n# First\n\n## Context and Problem Statement\n\nthe first one\n",
 		"0001-first.rule":  "adr \"0001\" \"First\"\n\nfile \"x\" {\n  severity error\n}\n",
-		"0002-second.md":   "---\nstatus: proposed\ntags: [go]\n---\n\n# Second\n\n## Context and Problem Statement\n\nstill arguing\n",
+		"0002-second.md":   "---\nstatus: proposed\n---\n\n# Second\n\n## Context and Problem Statement\n\nstill arguing\n",
 		"0002-second.rule": "adr \"0002\" \"Second\"\n\nfile \"y\" {\n  severity error\n}\n",
 		"0003-third.md":    "---\nstatus: accepted\n---\n\n# Third\n\n## Context and Problem Statement\n\nno rule of its own\n",
+		"0004-fourth.md":   "---\nstatus: accepted\ntags: [go]\n---\n\n# Fourth\n\n## Context and Problem Statement\n\nfor go\n",
+		"0004-fourth.rule": "adr \"0004\" \"Fourth\"\n\nfile \"z\" {\n  severity error\n}\n",
+		"0005-fifth.md":    "---\nstatus: accepted\ntags: [product]\n---\n\n# Fifth\n\n## Context and Problem Statement\n\nfor products\n",
 	}
 	for name, body := range files {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o600); err != nil {
@@ -122,6 +125,23 @@ func listDecisionIDs(t *testing.T, cs *mcpsdk.ClientSession) []string {
 	return ids
 }
 
+func listRuleIDs(t *testing.T, cs *mcpsdk.ClientSession) []string {
+	t.Helper()
+	res, err := cs.CallTool(context.Background(), &mcpsdk.CallToolParams{Name: "list_rules", Arguments: map[string]any{}})
+	if err != nil {
+		t.Fatalf("call list_rules: %v", err)
+	}
+	var rules listRulesOutput
+	if err := json.Unmarshal([]byte(contentText(res)), &rules); err != nil {
+		t.Fatalf("decode list_rules: %v", err)
+	}
+	ids := make([]string, 0, len(rules.Rules))
+	for _, r := range rules.Rules {
+		ids = append(ids, r.ADRID)
+	}
+	return ids
+}
+
 // TestEndToEnd drives the server through a real MCP session: the handshake, the
 // three tools, and reading one decision by each spelling of its id.
 func TestEndToEnd(t *testing.T) {
@@ -161,8 +181,9 @@ func TestEndToEnd(t *testing.T) {
 	if err := json.Unmarshal([]byte(contentText(res)), &rules); err != nil {
 		t.Fatalf("decode list_rules: %v", err)
 	}
-	// Only the accepted decision's rule: the proposed one's is a draft, and the
-	// other accepted decision has no rule.
+	// Only the accepted decision's rule: the proposed one's is a draft, the
+	// other untagged accepted decision has no rule, and the tagged one's reaches
+	// only a repository declaring its tag.
 	if len(rules.Rules) != 1 {
 		t.Fatalf("rules = %+v, want ADR-0001's alone", rules.Rules)
 	}
@@ -190,8 +211,9 @@ func TestEndToEnd(t *testing.T) {
 	if list.Decisions[1].Status != "proposed" {
 		t.Errorf("second status = %q, want proposed", list.Decisions[1].Status)
 	}
-	if !slices.Equal(list.Decisions[0].Tags, []string{"product"}) || list.Decisions[2].Tags != nil {
-		t.Errorf("tags = %q and %q, want [product] and none", list.Decisions[0].Tags, list.Decisions[2].Tags)
+	// A repository that declares nothing is listed the untagged decisions alone.
+	if list.Decisions[2].ADRID != "ADR-0003" || list.Decisions[2].Tags != nil {
+		t.Errorf("third = %+v, want ADR-0003 without tags", list.Decisions[2])
 	}
 
 	for _, id := range []string{"1", "0001", "ADR-0001"} {
@@ -203,7 +225,7 @@ func TestEndToEnd(t *testing.T) {
 		if err := json.Unmarshal([]byte(contentText(res)), &got); err != nil {
 			t.Fatalf("decode get_decision(%q): %v", id, err)
 		}
-		if got.ADRID != "ADR-0001" || !strings.Contains(got.Body, "the first one") || !slices.Equal(got.Tags, []string{"product"}) {
+		if got.ADRID != "ADR-0001" || !strings.Contains(got.Body, "the first one") || got.Tags != nil {
 			t.Errorf("get_decision(%q) = %+v", id, got)
 		}
 		// The decision comes without its rule: handing rules out is list_rules'
@@ -222,35 +244,24 @@ func TestEndToEnd(t *testing.T) {
 	}
 }
 
-// TestDeclaredTagsNarrowTheDecisionsOnly serves one repository over stdio, as a
-// consumer running adi itself would, declaring its tags in the environment.
-func TestDeclaredTagsNarrowTheDecisionsOnly(t *testing.T) {
+// TestDeclaredTagsNarrowDecisionsAndRules serves one repository over stdio, as
+// a consumer running adi itself would, declaring its tags in the environment.
+func TestDeclaredTagsNarrowDecisionsAndRules(t *testing.T) {
 	ctx := context.Background()
 	s := newTestServer(t)
 	declareInEnv(t, s, " Go ")
 	cs := connect(t, s)
 
-	// ADR-0001 carries product alone, so it drops out. ADR-0003 has no tags and
-	// bears on every repository.
-	if got, want := listDecisionIDs(t, cs), []string{"ADR-0002", "ADR-0003"}; !slices.Equal(got, want) {
+	// ADR-0005 carries product alone, so it drops out. The untagged decisions
+	// bear on every repository, and ADR-0004 is added for declaring go.
+	if got, want := listDecisionIDs(t, cs), []string{"ADR-0001", "ADR-0002", "ADR-0003", "ADR-0004"}; !slices.Equal(got, want) {
 		t.Errorf("decisions = %v, want %v", got, want)
 	}
-
-	// A rule confines itself by its paths, so ADR-0001's still reaches this
-	// repository whatever it declares.
-	res, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "list_rules", Arguments: map[string]any{}})
-	if err != nil {
-		t.Fatalf("call list_rules: %v", err)
-	}
-	var rules listRulesOutput
-	if err := json.Unmarshal([]byte(contentText(res)), &rules); err != nil {
-		t.Fatalf("decode list_rules: %v", err)
-	}
-	if len(rules.Rules) != 1 || rules.Rules[0].ADRID != "ADR-0001" {
-		t.Errorf("rules = %+v, want ADR-0001's", rules.Rules)
+	if got, want := listRuleIDs(t, cs), []string{"ADR-0001", "ADR-0004"}; !slices.Equal(got, want) {
+		t.Errorf("rules = %v, want %v", got, want)
 	}
 
-	res, err = cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "get_decision", Arguments: map[string]any{"adr_id": "1"}})
+	res, err := cs.CallTool(ctx, &mcpsdk.CallToolParams{Name: "get_decision", Arguments: map[string]any{"adr_id": "5"}})
 	if err != nil {
 		t.Fatalf("call get_decision: %v", err)
 	}
@@ -267,10 +278,18 @@ func TestHTTPTransport(t *testing.T) {
 	// nothing on their behalf.
 	declareInEnv(t, s, "go")
 
-	if got, want := listDecisionIDs(t, connectHTTP(t, s, nil)), []string{"ADR-0001", "ADR-0002", "ADR-0003"}; !slices.Equal(got, want) {
+	undeclared := connectHTTP(t, s, nil)
+	if got, want := listDecisionIDs(t, undeclared), []string{"ADR-0001", "ADR-0002", "ADR-0003"}; !slices.Equal(got, want) {
 		t.Errorf("declaring nothing: decisions = %v, want %v", got, want)
 	}
-	if got, want := listDecisionIDs(t, connectHTTP(t, s, http.Header{"Adi-Tags": {"product, rust"}})), []string{"ADR-0001", "ADR-0003"}; !slices.Equal(got, want) {
-		t.Errorf("declaring product, rust: decisions = %v, want %v", got, want)
+	if got, want := listRuleIDs(t, undeclared), []string{"ADR-0001"}; !slices.Equal(got, want) {
+		t.Errorf("declaring nothing: rules = %v, want %v", got, want)
+	}
+	declared := connectHTTP(t, s, http.Header{"Adi-Tags": {"go, rust"}})
+	if got, want := listDecisionIDs(t, declared), []string{"ADR-0001", "ADR-0002", "ADR-0003", "ADR-0004"}; !slices.Equal(got, want) {
+		t.Errorf("declaring go, rust: decisions = %v, want %v", got, want)
+	}
+	if got, want := listRuleIDs(t, declared), []string{"ADR-0001", "ADR-0004"}; !slices.Equal(got, want) {
+		t.Errorf("declaring go, rust: rules = %v, want %v", got, want)
 	}
 }
