@@ -44,7 +44,7 @@ go run ./tools/ruledsl vendor <ai-plugins>/plugins/adr-remote-mcp/.apm/skills/ad
 
 ### タグ
 
-frontmatter の `tags` に語を並べると、その決定は、同じ語のどれかを宣言したリポジトリにだけ一覧される。tags の無い決定は、どのリポジトリにも一覧される。宣言のしかたは [MCP の面](#mcp-の面) に書く。
+frontmatter の `tags` に語を並べると、その決定とルールは、同じ語のどれかを宣言したリポジトリにだけ配られる。tags の無い決定とルールは、どのリポジトリにも配られる。tag を宣言しないリポジトリには、tags の無いものだけが届く。宣言のしかたは [MCP の面](#mcp-の面) に書く。
 
 MADR に標準の欄は無いので、adr org の [ADG](https://github.com/adr/ad-guidance-tool) が決定の frontmatter に持つ `tags` に揃えた。MADR 本家がカテゴリに使うサブフォルダでは分けない。1つの決定が1つのカテゴリにしか入らず、`ADR-NNNN` の番号もリポジトリの中で一意でなくなるため。
 
@@ -73,13 +73,13 @@ adi mcp --model decisions --http 127.0.0.1:8080
 
 | tool | 返すもの |
 | --- | --- |
-| `list_rules` | accepted な決定の `.rule` すべて |
-| `list_decisions` | 決定の id・title・status・tags。利用側が tag を宣言していれば、そのどれかを持つ決定と tags の無い決定に絞る |
+| `list_rules` | accepted な決定の `.rule`。利用側が宣言した tag のどれかを持つ決定と tags の無い決定のものに絞る |
+| `list_decisions` | 決定の id・title・status・tags。`list_rules` と同じく、利用側が宣言した tag のどれかを持つ決定と tags の無い決定に絞る |
 | `get_decision` | 決定の本文と tags。ルールは含めない |
 
 利用側は、自分に当てはまる [tag](#タグ) をカンマ区切りで宣言する。HTTP ではリクエストの `Adi-Tags` header に、stdio では環境変数 `ADI_TAGS` に書く。HTTP のサーバーは1つで全リポジトリに答えるので、宣言はリクエストごとに運び、サーバー自身の環境変数は見ない。
 
-絞るのは `list_decisions` だけ。ルールはパスで自分の対象を限っているので `list_rules` は絞らず、`get_decision` は id で指された決定をそのまま返す。
+`list_rules` も絞るのは、パスでは「Go のリポジトリなら」のようなリポジトリの性質を言えないため。tag の付いた決定のルールは、それを宣言したリポジトリにだけ届けて、性質の条件をルールの外で持つ。`get_decision` は絞らず、id で指された決定をそのまま返す。
 
 apm で `adr` サーバーを受け取るリポジトリが宣言するときは、自分の `apm.yml` の `dependencies.mcp` に `adr` を `headers` 付きで宣言し直す。apm は同じ名前のサーバーを root の宣言を優先して1つにするので、package の宣言が置き換わる。値は `${VAR}` にせず直接書く。apm は `${VAR}` を install 時に解決して生成物へ焼き込むので、宣言の出どころが install した環境になる。
 

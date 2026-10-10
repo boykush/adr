@@ -19,18 +19,19 @@ type stdioEnv struct {
 	Tags string `env:"ADI_TAGS"`
 }
 
-// registerTools wires the read surface. There is no writing tool. Only the
-// decision listing narrows, by the tags the repository declares: a rule already
-// confines itself to the paths it names, and a decision asked for by id is one
-// the session wants whatever its tags.
+// registerTools wires the read surface. There is no writing tool. Both listings
+// narrow by the tags the repository declares: an untagged decision and its rule
+// reach every repository, and a tagged one reaches only those declaring one of
+// its tags. A decision asked for by id is one the session wants whatever its
+// tags.
 func (s *Server) registerTools(srv *mcpsdk.Server) {
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "list_rules",
-		Description: "List every rule that binds this session, in full: the rule files of the accepted decisions, written in ADE's rule DSL. The work is held to these. A rule names paths and assertions about whichever repository it is read in, so it applies as written to the one you are working in. Nothing runs the rules: they are checked by reading them against the change. Not at the start of a session: where the repository runs ai-review (.github/workflows/ai-review.yml), call this when its review asks for changes; elsewhere, once the work is done, before it is pushed.",
+		Description: "List every rule that binds this session, in full: the rule files of the accepted decisions that bear on the repository you work in, written in ADE's rule DSL. The work is held to these. A rule names paths and assertions about whichever repository it is read in, so it applies as written to the one you are working in. Nothing runs the rules: they are checked by reading them against the change. Not at the start of a session: where the repository runs ai-review (.github/workflows/ai-review.yml), call this when its review asks for changes; elsewhere, once the work is done, before it is pushed.",
 	}, s.listRules)
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "list_decisions",
-		Description: "List the architectural decisions in the model as their id, title, status and tags, to find the one behind a rule. The work is held to the rules, not to the decisions, so call this only when you need a rule's reasons. A decision without tags bears on every repository; one with tags bears on the repositories that declare one of them, and when the repository you work in declares tags, the listing leaves the others out. Read any of them in full with get_decision.",
+		Description: "List the architectural decisions in the model as their id, title, status and tags, to find the one behind a rule. The work is held to the rules, not to the decisions, so call this only when you need a rule's reasons. A decision without tags bears on every repository; one with tags bears only on the repositories that declare one of them, and the listing leaves out the ones that do not bear on the repository you work in. Read any of them in full with get_decision.",
 	}, s.listDecisions)
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "get_decision",
@@ -38,16 +39,17 @@ func (s *Server) registerTools(srv *mcpsdk.Server) {
 	}, s.getDecision)
 }
 
-func (s *Server) listRules(_ context.Context, _ *mcpsdk.CallToolRequest, _ listRulesInput) (*mcpsdk.CallToolResult, listRulesOutput, error) {
+func (s *Server) listRules(_ context.Context, req *mcpsdk.CallToolRequest, _ listRulesInput) (*mcpsdk.CallToolResult, listRulesOutput, error) {
 	decisions, err := decision.Load(s.cfg.ModelDir)
 	if err != nil {
 		return nil, listRulesOutput{}, err
 	}
+	tags := s.declaredTags(req.Extra)
 	rules := make([]ruleJSON, 0, len(decisions))
 	for _, d := range decisions {
 		// Beside any decision but an accepted one, a rule is a draft or a
 		// leftover, and a session handed it would obey it all the same.
-		if d.Binds() && d.RulePath != "" {
+		if d.Binds() && d.RulePath != "" && d.AppliesTo(tags) {
 			rules = append(rules, toRule(d))
 		}
 	}
@@ -62,9 +64,7 @@ func (s *Server) listDecisions(_ context.Context, req *mcpsdk.CallToolRequest, _
 	tags := s.declaredTags(req.Extra)
 	summaries := make([]decisionSummaryJSON, 0, len(decisions))
 	for _, d := range decisions {
-		// A repository that declares nothing has given no ground to leave a
-		// decision out on.
-		if len(tags) > 0 && !d.AppliesTo(tags) {
+		if !d.AppliesTo(tags) {
 			continue
 		}
 		summaries = append(summaries, toSummary(d))
