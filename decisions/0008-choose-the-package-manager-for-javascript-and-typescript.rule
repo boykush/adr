@@ -1,14 +1,18 @@
-adr "0008" "Choose the package manager for Node"
+adr "0008" "Choose the package manager for JavaScript and TypeScript"
 
-# pnpm は pnpm-lock.yaml を書く。npm の lockfile があれば npm で入れている。
+# pnpm は pnpm-lock.yaml を書く。npm や Bun の lockfile があれば、それで入れている。
 # yarn.lock は禁じない。Backstage のように枠組みが Yarn を決めるリポジトリがあり、
-# それをリポジトリの中の形では見分けられないため。
+# それをリポジトリの中の形では見分けられないため。deno.lock も npm 以外の依存を持つので禁じない。
 path "PackageLock"   = "**/package-lock.json"
 path "NpmShrinkwrap" = "**/npm-shrinkwrap.json"
+path "BunLock"       = "**/bun.lock"
+path "BunLockb"      = "**/bun.lockb"
 
-file "packages_without_npm" {
+file "packages_with_pnpm" {
   PackageLock must not exist
   NpmShrinkwrap must not exist
+  BunLock must not exist
+  BunLockb must not exist
   # worktree は別ブランチの checkout で、依存パッケージの中身はそのリポジトリの宣言ではない
   exclude ".claude/worktrees/**"
   exclude "**/node_modules/**"
