@@ -2,7 +2,7 @@ adr "0008" "Choose the package manager for JavaScript and TypeScript"
 
 # pnpm は pnpm-lock.yaml を書く。npm や Bun の lockfile があれば、それで入れている。
 # yarn.lock は禁じない。Backstage のように枠組みが Yarn を決めるリポジトリがあり、
-# それをリポジトリの中の形では見分けられないため。deno.lock も npm 以外の依存を持つので禁じない。
+# それをリポジトリの中の形では見分けられないため。
 path "PackageLock"   = "**/package-lock.json"
 path "NpmShrinkwrap" = "**/npm-shrinkwrap.json"
 path "BunLock"       = "**/bun.lock"
