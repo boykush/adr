@@ -1,0 +1,52 @@
+# This repository's entities in boykush's Backstage catalog, found on main by its
+# GitHub discovery (boykush/infrastructure-as-code's applications/backstage/).
+# How an entity is written — which edges to draw, what a tag means — is set in
+# boykush/github-management's AGENTS.md and the comments atop its catalog/ files.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: adr
+  description: >-
+    repo をまたぐ設計上の決定（MADR）の置き場。決定は各 repo へ複製せず MCP で配る。対象は fork と
+    archive を除く owned repo（user:boykush fork:false archived:false）
+  annotations:
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/part-of=adr
+  tags:
+    - go
+spec:
+  type: repository
+  lifecycle: production
+  owner: user:boykush
+  system: knowledge
+  providesApis:
+    - adr-mcp
+  consumesApis:
+    - adr-mcp
+    - wiki-mcp
+    - catalog-mcp
+  dependsOn:
+    - component:ai-plugins
+    - component:workflows
+    - resource:doks-cluster
+    - resource:cloudflare-tunnel
+    - resource:ghcr
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: adr-mcp
+  description: >-
+    boykush/adr の決定を読む remote MCP サーバー。読み取り専用・無認証。公開エンドポイントは
+    infrastructure-as-code が持つ
+  links:
+    - url: https://github.com/boykush/ai-plugins/blob/main/plugins/adr-remote-mcp/apm.yml
+      title: 接続先の持ち主（ai-plugins）
+      icon: github
+spec:
+  type: mcp-server
+  lifecycle: production
+  owner: user:boykush
+  system: knowledge
+  remotes:
+    - type: streamable-http
+      url: https://adr-mcp.boykush.com/mcp
