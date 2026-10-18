@@ -10,7 +10,7 @@ includes: auto
 # どれも直接は書き換えない。
 dependencies:
   apm:
-    - boykush/ai-plugins/plugins/wiki-remote-mcp#525d419559f40bcf9e132860ad2f0345e7dbe352
-    - boykush/ai-plugins/plugins/adr-remote-mcp#525d419559f40bcf9e132860ad2f0345e7dbe352
-    - boykush/ai-plugins/plugins/catalog-remote-mcp#525d419559f40bcf9e132860ad2f0345e7dbe352
+    - boykush/ai-plugins/plugins/wiki-remote-mcp#4c51918e559b7740b85810463ad0cc72d346a1d4
+    - boykush/ai-plugins/plugins/adr-remote-mcp#4c51918e559b7740b85810463ad0cc72d346a1d4
+    - boykush/ai-plugins/plugins/catalog-remote-mcp#4c51918e559b7740b85810463ad0cc72d346a1d4
   mcp: []
