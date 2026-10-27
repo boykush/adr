@@ -1,4 +1,4 @@
-adr "0008" "Choose the package manager for JavaScript and TypeScript"
+adr "0009" "Choose the package manager for JavaScript and TypeScript"
 
 # pnpm は pnpm-lock.yaml を書く。npm や Bun の lockfile があれば、それで入れている。
 # yarn.lock は禁じない。Backstage のように枠組みが Yarn を決めるリポジトリがあり、
