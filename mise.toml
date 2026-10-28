@@ -2,7 +2,7 @@
 go = "1.27.3"
 golangci-lint = "2.15.0"
 # image の脆弱性を CI（.github/workflows/adr-mcp-server-image.yml）で見る。
-trivy = "0.75.0"
+trivy = "0.76.1"
 
 [env]
 _.path = ["{{config_root}}/.tools/bin"]
