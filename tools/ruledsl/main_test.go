@@ -9,9 +9,9 @@ import (
 	"testing"
 )
 
-// The skill reaches this repo from ai-plugins the way it reaches every other
-// consumer, so the copy apm deployed here is the one to hold to go.mod.
-const skillReferences = "../../.claude/skills/ade-rule-dsl/references"
+// The plugin's copy is the one every consumer is handed, so it is the one to
+// hold to go.mod.
+const skillReferences = "../../plugins/adr-remote-mcp/skills/ade-rule-dsl/references"
 
 // TestSkillCarriesWhatVendorWrites fails once go.mod moves ADE to a version
 // the ade-rule-dsl skill's reference was not taken from.
@@ -34,7 +34,7 @@ func TestSkillCarriesWhatVendorWrites(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !bytes.Equal(got, want) {
-			t.Errorf("the ade-rule-dsl skill's %s is not ADE %s's: vendor it into ai-plugins, then move the pin in apm.yml (README: 書く)", name, version)
+			t.Errorf("the ade-rule-dsl skill's %s is not ADE %s's: vendor it into plugins/adr-remote-mcp (README: 読み書き)", name, version)
 		}
 	}
 }

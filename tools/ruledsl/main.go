@@ -1,6 +1,6 @@
 // Command ruledsl holds the rule files to ADE's rule DSL at the version go.mod
 // requires: it checks that they parse, and writes the DSL reference that the
-// ade-rule-dsl skill in boykush/ai-plugins carries. Both come from one ADE
+// ade-rule-dsl skill in plugins/adr-remote-mcp carries. Both come from one ADE
 // build, so the grammar a session reads a rule by is the one it was checked by.
 package main
 

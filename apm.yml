@@ -11,6 +11,16 @@ includes: auto
 dependencies:
   apm:
     - boykush/ai-plugins/plugins/wiki-remote-mcp#f0a74a4a91aa504d9c262bc087ed2ba417b42e9e
-    - boykush/ai-plugins/plugins/adr-remote-mcp#f0a74a4a91aa504d9c262bc087ed2ba417b42e9e
     - boykush/ai-plugins/plugins/catalog-remote-mcp#f0a74a4a91aa504d9c262bc087ed2ba417b42e9e
-  mcp: []
+    # この repo が配る plugin を、ai-plugins を通さずに受け取る。通すと skill を直すたびに
+    # ai-plugins とこの repo の固定を往復で上げることになる。plugin の root を指さないのは、
+    # apm が Agent Plugins の形を Claude と Codex へは展開しないため。
+    - ./plugins/adr-remote-mcp/skills/ade-rule-dsl
+    - ./plugins/adr-remote-mcp/skills/adr-check
+    - ./plugins/adr-remote-mcp/skills/adr-review
+  mcp:
+    # plugins/adr-remote-mcp/mcp.json と同じ接続先。apm はその mcp.json を読まないので、ここでも宣言する。
+    - name: adr
+      registry: false
+      transport: http
+      url: https://adr-mcp.boykush.com/mcp
