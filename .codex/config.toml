@@ -1,11 +1,11 @@
-[mcp_servers.scraps]
-url = "https://wiki-mcp.boykush.com/mcp"
-id = ""
-
 [mcp_servers.adr]
 url = "https://adr-mcp.boykush.com/mcp"
 id = ""
 
 [mcp_servers.catalog]
 url = "https://catalog-mcp.boykush.com/mcp"
+id = ""
+
+[mcp_servers.scraps]
+url = "https://wiki-mcp.boykush.com/mcp"
 id = ""

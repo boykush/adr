@@ -32,14 +32,14 @@ DSL は散文と違って主語を要求しない——`path "**/CLAUDE.md"` は
 
 #### 読み書き
 
-DSL の reference は、ルールを読む側にも書く側にも要る。それを持つ skill `ade-rule-dsl` は、[ai-plugins](https://github.com/boykush/ai-plugins) の `adr-remote-mcp` package が MCP サーバーへの参照と一緒に配る。ルールを受け取るリポジトリには、読むための文法も同じ依存で届く。この repo もその package に依存して同じ skill を受け取る（MCP サーバー `adr` の参照も一緒に入る）。
+DSL の reference は、ルールを読む側にも書く側にも要る。それを持つ skill `ade-rule-dsl` は、この repo の plugin [`plugins/adr-remote-mcp`](plugins/adr-remote-mcp) が MCP サーバーへの参照と一緒に配る。ルールを受け取るリポジトリには、読むための文法も同じ依存で届く。plugin は [Agent Plugins](https://agent-plugins.org/specification) の形で書き、apm の package にするのは [ai-plugins](https://github.com/boykush/ai-plugins) の仕事。この repo は ai-plugins を通さず、`apm.yml` から plugin の skill を直接受け取る。
 
-書き方は skill `write-ade-rule` が持つ。決定との対応やパスの基準といった、この repo だけの取り決めなので ai-plugins には置かず、`.apm/skills/` に置く。文法は reference を分けず、`ade-rule-dsl` のものを読む。書いたら `mise run rules` で ADE の parser（`dsl.Validate`）に通す。中身は `tools/ruledsl` で、CI も同じ task を回す。確かめるのは DSL として読めることだけで、ルールが満たされているかは見ない。
+書き方は skill `write-ade-rule` が持つ。決定との対応やパスの基準といった、この repo だけの取り決めなので plugin には入れず、`.apm/skills/` に置く。文法は reference を分けず、`ade-rule-dsl` のものを読む。書いたら `mise run rules` で ADE の parser（`dsl.Validate`）に通す。中身は `tools/ruledsl` で、CI も同じ task を回す。確かめるのは DSL として読めることだけで、ルールが満たされているかは見ない。
 
-reference は ADE の `dsl/dsl-reference.md` を、Apache-2.0 の LICENSE と一緒に写したもの。上流を指すだけにしないのは、Codex の sandbox のようにネットワークに出られないセッションでも読めるようにするため。版は go.mod が要求する ADE、つまり `mise run rules` が通す parser の版に揃え、この repo に配られた reference がその版のものかを `go test` が確かめる。ADE を上げたら ai-plugins 側を書き直し、その commit へ `apm.yml` の固定を上げる。
+reference は ADE の `dsl/dsl-reference.md` を、Apache-2.0 の LICENSE と一緒に写したもの。上流を指すだけにしないのは、Codex の sandbox のようにネットワークに出られないセッションでも読めるようにするため。版は go.mod が要求する ADE、つまり `mise run rules` が通す parser の版に揃え、plugin が配る reference がその版のものかを `go test` が確かめる。ADE を上げたら書き直して `apm install` する。
 
 ```sh
-go run ./tools/ruledsl vendor <ai-plugins>/plugins/adr-remote-mcp/.apm/skills/ade-rule-dsl/references
+go run ./tools/ruledsl vendor plugins/adr-remote-mcp/skills/ade-rule-dsl/references
 ```
 
 ### タグ
@@ -71,7 +71,7 @@ adi mcp --model decisions --http 127.0.0.1:8080
 
 利用側が引くのは `list_rules`。ai-review を入れたリポジトリでは、PR のレビューが変更を求めたときにそのルールを引いて直し、それ以外では作業を終えて push する前に引いて変更と照合する。始めに引かないのは、作業に関わらないルールまでセッションに載ってノイズになるため。`list_decisions` と `get_decision` は、ルールの理由を知りたいときに使う。
 
-照らし方は MCP の面では語らず、[ai-plugins](https://github.com/boykush/ai-plugins) の `adr-remote-mcp` package の skill（`adr-check` / `adr-review`）が持つ。2つの違いは [package の README](https://github.com/boykush/ai-plugins/tree/main/plugins/adr-remote-mcp#adr-check-と-adr-review) に書いてある。handshake の instructions は、いつ照らすかと、どの skill に従うかだけを言う。
+照らし方は MCP の面では語らず、plugin `adr-remote-mcp` の skill（`adr-check` / `adr-review`）が持つ。2つの違いは [plugin の README](plugins/adr-remote-mcp/README.md#adr-check-と-adr-review) に書いてある。handshake の instructions は、いつ照らすかと、どの skill に従うかだけを言う。
 
 | tool | 返すもの |
 | --- | --- |
@@ -89,7 +89,7 @@ PR のレビューでは、ai-review（[boykush/workflows](https://github.com/bo
 
 **書き込みの面は出さない。** 認証も TLS も持たないサーバーを前段越しに公開するので、エージェントは読めるが状態を変えられない形を守る。`.rule` はパースも実行もせず、テキストとして渡すだけ。
 
-ADG の MCP が持つ `get_dsl_reference` と `validate_rule` は持たない。reference は読む側にも要るが、MCP サーバーへの参照と同じ package が skill として届けるので、MCP の面には足さない。handshake の instructions がその skill を指す。`validate_rule` の役は、ルールを書くこの repo の `mise run rules` が持つ（[読み書き](#読み書き)）。
+ADG の MCP が持つ `get_dsl_reference` と `validate_rule` は持たない。reference は読む側にも要るが、MCP サーバーへの参照と同じ plugin が skill として届けるので、MCP の面には足さない。handshake の instructions がその skill を指す。`validate_rule` の役は、ルールを書くこの repo の `mise run rules` が持つ（[読み書き](#読み書き)）。
 
 ## 配布
 

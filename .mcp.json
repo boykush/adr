@@ -1,9 +1,5 @@
 {
   "mcpServers": {
-    "scraps": {
-      "type": "http",
-      "url": "https://wiki-mcp.boykush.com/mcp"
-    },
     "adr": {
       "type": "http",
       "url": "https://adr-mcp.boykush.com/mcp"
@@ -11,6 +7,10 @@
     "catalog": {
       "type": "http",
       "url": "https://catalog-mcp.boykush.com/mcp"
+    },
+    "scraps": {
+      "type": "http",
+      "url": "https://wiki-mcp.boykush.com/mcp"
     }
   }
 }

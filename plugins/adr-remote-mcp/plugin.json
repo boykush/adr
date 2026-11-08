@@ -1,0 +1,9 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "author": {
+    "name": "boykush"
+  },
+  "description": "Remote MCP server for boykush/adr's decision records, and the skills that go with it - the ADE rule DSL reference to read their rules by, how to check work against the rules, and how to review a pull request against them. Read the decisions from any repository without restating any of it in each one.",
+  "name": "adr-remote-mcp",
+  "version": "0.1.0"
+}
