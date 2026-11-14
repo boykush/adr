@@ -10,6 +10,8 @@ kind: System
 metadata:
   name: adr
   description: repo をまたぐ設計上の決定を書き、ルールとして MCP で配る
+  annotations:
+    backstage.io/techdocs-ref: dir:.
 spec:
   owner: user:boykush
 ---
