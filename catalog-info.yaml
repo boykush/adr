@@ -2,6 +2,17 @@
 # GitHub discovery (boykush/infrastructure-as-code's applications/backstage/).
 # How an entity is written — which edges to draw, what a tag means — is set in
 # boykush/github-management's AGENTS.md and the comments atop its catalog/ files.
+
+# One entity for the path from a decision to a change checked against its rules. The
+# sides that check (ai-review, a working session) reach it through adr-mcp, not as parts.
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: adr
+  description: repo をまたぐ設計上の決定を書き、ルールとして MCP で配る
+spec:
+  owner: user:boykush
+---
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
@@ -17,7 +28,7 @@ spec:
   type: repository
   lifecycle: production
   owner: user:boykush
-  system: knowledge
+  system: adr
   providesApis:
     - adr-mcp
   consumesApis:
@@ -46,7 +57,7 @@ spec:
   type: mcp-server
   lifecycle: production
   owner: user:boykush
-  system: knowledge
+  system: adr
   remotes:
     - type: streamable-http
       url: https://adr-mcp.boykush.com/mcp
@@ -66,7 +77,7 @@ spec:
   type: plugin
   lifecycle: production
   owner: user:boykush
-  system: knowledge
+  system: adr
   skills:
     - airesource:ade-rule-dsl
     - airesource:adr-check
@@ -83,7 +94,7 @@ spec:
   type: skill
   lifecycle: production
   owner: user:boykush
-  system: knowledge
+  system: adr
 ---
 apiVersion: backstage.io/v1alpha1
 kind: AiResource
@@ -96,7 +107,7 @@ spec:
   type: skill
   lifecycle: production
   owner: user:boykush
-  system: knowledge
+  system: adr
 ---
 apiVersion: backstage.io/v1alpha1
 kind: AiResource
@@ -109,4 +120,4 @@ spec:
   type: skill
   lifecycle: production
   owner: user:boykush
-  system: knowledge
+  system: adr
