@@ -54,8 +54,8 @@ dependencies:
 - repo_url: boykush/ai-plugins
   name: catalog-remote-mcp
   host: github.com
-  resolved_commit: 897c86ce44b3d4aa112d9878472ffa94b8c6abc5
-  resolved_ref: 897c86ce44b3d4aa112d9878472ffa94b8c6abc5
+  resolved_commit: e0c605d627c5f7782d18b029f33d9282dc81278f
+  resolved_ref: e0c605d627c5f7782d18b029f33d9282dc81278f
   version: 0.1.0
   virtual_path: plugins/catalog-remote-mcp
   is_virtual: true
@@ -64,8 +64,8 @@ dependencies:
 - repo_url: boykush/ai-plugins
   name: wiki-remote-mcp
   host: github.com
-  resolved_commit: 897c86ce44b3d4aa112d9878472ffa94b8c6abc5
-  resolved_ref: 897c86ce44b3d4aa112d9878472ffa94b8c6abc5
+  resolved_commit: e0c605d627c5f7782d18b029f33d9282dc81278f
+  resolved_ref: e0c605d627c5f7782d18b029f33d9282dc81278f
   version: 0.1.0
   virtual_path: plugins/wiki-remote-mcp
   is_virtual: true
@@ -179,7 +179,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:9ceaced6ca59c4d5439a5f4fd7d3b467a22fb025f8a25ceca71819eb896eb0c5
+  content_hash: sha256:5eb7fc2b1a66f4ce0265d645df6bae9ace251a83ab22fc7584579e67cdcb3464
 - kind: project-relative
   target: codex
   value: .agents/skills/ade-rule-dsl
@@ -287,7 +287,7 @@ deployments:
   owners:
   - .
   active_owner: .
-  content_hash: sha256:9ceaced6ca59c4d5439a5f4fd7d3b467a22fb025f8a25ceca71819eb896eb0c5
+  content_hash: sha256:5eb7fc2b1a66f4ce0265d645df6bae9ace251a83ab22fc7584579e67cdcb3464
 - kind: uri
   target: mcp
   value: adr
@@ -385,6 +385,6 @@ local_deployed_files:
 - .claude/skills/write-adr/SKILL.md
 local_deployed_file_hashes:
   .agents/skills/write-ade-rule/SKILL.md: sha256:e191caa5d31a938ebfeda5f55e2898de2cf56babbc36cb5587ce7caba56db145
-  .agents/skills/write-adr/SKILL.md: sha256:9ceaced6ca59c4d5439a5f4fd7d3b467a22fb025f8a25ceca71819eb896eb0c5
+  .agents/skills/write-adr/SKILL.md: sha256:5eb7fc2b1a66f4ce0265d645df6bae9ace251a83ab22fc7584579e67cdcb3464
   .claude/skills/write-ade-rule/SKILL.md: sha256:e191caa5d31a938ebfeda5f55e2898de2cf56babbc36cb5587ce7caba56db145
-  .claude/skills/write-adr/SKILL.md: sha256:9ceaced6ca59c4d5439a5f4fd7d3b467a22fb025f8a25ceca71819eb896eb0c5
+  .claude/skills/write-adr/SKILL.md: sha256:5eb7fc2b1a66f4ce0265d645df6bae9ace251a83ab22fc7584579e67cdcb3464
