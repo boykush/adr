@@ -27,7 +27,7 @@ description: decisions/ の決定（MADR）を書く・直すときに使う。�
 
 ## 節
 
-次の節だけを書く。1つのことは1箇所に書き、別の決定が持つことは言い直さずに、その決定へのリンクで指す。
+[MADR](https://adr.github.io/madr/) 4.0.0 の節のうち、次だけを書く。Confirmation は書かない——守られているかの基準はルールが持つ。1つのことは1箇所に書き、別の決定が持つことは言い直さずに、その決定へのリンクで指す。
 
 - **Context and Problem Statement**: 問いを立てるのに要る事実と、問い。選択肢の評価は Decision Outcome に回す
 - **Decision Drivers**: 選択肢を比べる軸

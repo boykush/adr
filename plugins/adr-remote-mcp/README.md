@@ -19,7 +19,13 @@
 
 ### skill の reference
 
-`skills/ade-rule-dsl/references/` の `dsl-reference.md` と `LICENSE` は、ADE の `dsl/dsl-reference.md` と LICENSE（Apache-2.0）を写したもの。手では直さず、`tools/ruledsl` が書く（[README の読み書き](../../README.md#読み書き)）。
+`skills/ade-rule-dsl/references/` の `dsl-reference.md` と `LICENSE` は、ADE の `dsl/dsl-reference.md` と LICENSE（Apache-2.0）を写したもの。上流を指すだけにしないのは、Codex の sandbox のようにネットワークに出られないセッションでも読めるようにするため。
+
+手では直さず、`tools/ruledsl` が書く。版は go.mod が要求する ADE、つまり `mise run rules` が通す parser の版に揃い、それを `go test` が確かめる。ADE を上げて `go test` が落ちたら、書き直してから `apm install` する（この repo も同じ skill を受け取っているため）。
+
+```sh
+go run ./tools/ruledsl vendor plugins/adr-remote-mcp/skills/ade-rule-dsl/references
+```
 
 ### adr-check と adr-review
 
@@ -52,3 +58,9 @@ apm install
 Claude は `.mcp.json` と `.claude/skills/`、Codex は `.codex/config.toml` と `.agents/skills/` に入る。どれも project scope なので、リポジトリに commit すればそのリポジトリで開いた全セッションに効く。
 
 `~/.claude/settings.json` の `enabledMcpjsonServers` には `scraps` しか入っていないので、**Claude では初回に `adr` の承認プロンプトが出る**。出したくなければ [dotfiles](https://github.com/boykush/dotfiles) 側に `adr` を足す。
+
+### tag を名乗る
+
+tag の付いた決定は、同じ tag を名乗った repo にだけ届く。名乗るには、自分の `apm.yml` の `dependencies.mcp` に `adr` を `headers` 付きで宣言し直し、`Adi-Tags` に tag をカンマ区切りで書く。apm は同じ名前のサーバーを root の宣言を優先して1つにするので、package の宣言が置き換わる。
+
+値は `${VAR}` にせず直接書く。apm は `${VAR}` を install した環境で解決して生成物に焼き込むので、名乗りの出どころが install した人の環境になる。

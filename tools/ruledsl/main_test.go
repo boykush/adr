@@ -34,7 +34,7 @@ func TestSkillCarriesWhatVendorWrites(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !bytes.Equal(got, want) {
-			t.Errorf("the ade-rule-dsl skill's %s is not ADE %s's: vendor it into plugins/adr-remote-mcp (README: 読み書き)", name, version)
+			t.Errorf("the ade-rule-dsl skill's %s is not ADE %s's: vendor it into plugins/adr-remote-mcp (plugins/adr-remote-mcp/README.md: skill の reference)", name, version)
 		}
 	}
 }
