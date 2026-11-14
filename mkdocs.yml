@@ -1,0 +1,7 @@
+# Backstage の TechDocs が System adr の Docs タブに出す。build は Backstage の中の MkDocs が行う。
+site_name: adr
+docs_dir: docs
+nav:
+  - 決定が変更に届くまで: index.md
+plugins:
+  - techdocs-core
