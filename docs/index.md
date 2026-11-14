@@ -8,111 +8,96 @@ boykush 配下の repo に横断して効く技術的な意思決定を一度だ
 - **当てはまる repo にだけ効く。** 「Go の静的解析に何を使うか」のような決定は、Go の repo にだけ届く。全 repo に当てる決定と、性質の合う一部の repo に当てる決定を、同じ置き場で持てる。
 - **決めたことが、実際の変更で守られる。** 決定は読まれることを当てにしない。PR のレビューと作業中のエージェントが、変更をルールに照らし、違反を入る前に指摘する。決めた側が各 repo を見回らなくても、外れた変更はそこで見つかる。
 
-このページの残りは、それを成り立たせているもの——仕組みが**常に守っている原則**と、**変更が届くまでの流れ**——を書く。決定の書き方や MCP の面の細部は [README](https://github.com/boykush/adr#readme) が、関わる repo と関係は Backstage の catalog（この System と `adr-mcp` の Graph）が持つので、ここでは繰り返さない。
+このページの残りは、それを誰がどう担っているか——**全体像**と、**変更が届くまで**——を書く。決定の書き方や MCP の面の細部は [README](https://github.com/boykush/adr#readme) が、関係の正確な一覧は Backstage の catalog（この System と `adr-mcp` の Graph）が持つ。
 
-## 原則
+## 全体像
 
-各原則は、何が常に成り立つか（原則）・なぜか（理由）・その結果どうなり、何を外すと崩れるか（含意）で書く。
-
-### 1. ルールだけが縛る
-
-**原則**　各 repo が守るのは、accepted な決定に付いた `.rule` だけ。決定の本文は誰も縛らない。
-
-**理由**　決定の散文は、どの repo について言っているのかを名指さないと語れない。ルールの DSL は主語を取らず、読んだ repo についての言明になるので、各 repo が何を守るかはルールでしか書けない。
-
-**含意**
-
-- ルールの無い決定と、決定のうちルールに書かなかった部分は、どの repo にも効かない。効かせたいなら、その決定にルールを書く（skill `write-ade-rule`）。
-- ルールを実行して確かめる仕組みは無い。PR のレビューや作業中のセッションが、差分をルールに照らして読む。
-- 決定は、ルールの理由を知りたいときに読むもの。
-
-### 2. 参照先は1つ
-
-**原則**　決定もルールも、この repo にしか無い。各 repo へは写さない。
-
-**理由**　写すと、決め直すたびに写しの数だけ直すことになり、直し漏れた repo が古い決定に従い続ける。
-
-**含意**
-
-- 決め直しは、この repo を変えるだけで全 repo に届く。ただし届くのは配られてから（下の「流れ」の image の道）。
-- 各 repo の `AGENTS.md` などに決定の中身を書き写すと、この原則が崩れる。repo の側で守り方を書くなら、決定ではなく、その repo の事情だけを書く。
-
-### 3. 届く先は repo が名乗った性質で決まる
-
-**原則**　tag の付いた決定とそのルールは、同じ tag を名乗った repo にだけ届く。tag の無い決定は全 repo に届く。
-
-**理由**　「Go の repo なら」のような条件は、ルールのパスでは書けない。repo が何であるかを repo 自身に名乗らせ、条件をルールの外で持つ。
-
-**含意**
-
-- 名乗りは、その repo の `catalog-info.yaml` にある Component の `metadata.tags`。PR のレビューはそこから読み、作業中のセッションは repo の `apm.yml` の宣言で渡す。
-- 名乗り漏れは、黙って照らすルールが減る形で現れる。ai-review の log に、名乗った tag が出る。
-- tag は決定の話題ではなく repo の性質で立てる（[README のタグ](https://github.com/boykush/adr#タグ)）。話題で立てると、repo の側が名乗れない。
-
-### 4. 照らせないなら通さない
-
-**原則**　PR のレビューは、ルールを読めないまま変更を承認しない。
-
-**理由**　MCP サーバーに繋がらないセッションは、ルールを1つも読まずに走り切れてしまう。それを承認と区別できない。
-
-**含意**
-
-- サーバーを載せた cluster は夜間止まる（[infrastructure-as-code の node-pool-park](https://github.com/boykush/infrastructure-as-code/blob/main/.github/workflows/node-pool-park.yml)）ので、その間の ai-review は失敗する。朝に re-run するか、待てないなら owner が bypass で merge する。
-- これを支えているのは、[workflows の ai-review](https://github.com/boykush/workflows/blob/main/.github/workflows/ai-review.yml) が最初に繋がるかを確かめる step。外すと、夜間の PR が黙って承認される。
-
-### 5. 配る側は読むことしかできない
-
-**原則**　MCP サーバーは決定とルールを返すだけで、書き込みの面を持たない。
-
-**理由**　認証を持たずに公開している。決定は元から public なので読まれて困るものは無いが、書けるなら誰でも変えられることになる。
-
-**含意**
-
-- 決定とルールを変える道は、この repo への PR だけ。
-- サーバーに書き込みの tool を足すなら、前段の認証が先に要る。足さない限り、公開のままでよい。
-
-## 流れ
-
-変更が届く道は2本ある。直したものがどちらに乗るかで、効くまでの時間が変わる。
+System `adr` に入っているのは boykush/adr の entity だけで、仕組みを動かすのは周りの repo と基盤。役割は、決める・配る・照らす・名乗るの4つに分かれる。
 
 ```mermaid
 flowchart LR
-  subgraph rules["image の道：ルールと決定"]
-    D["decisions/ の決定と .rule"] --> IMG["image に同梱して GHCR へ"]
-    IMG --> IU["Image Updater が digest を<br/>infrastructure-as-code に書き戻す"]
-    IU --> MCP["remote MCP サーバー（adr-mcp）"]
+  subgraph decide["決める"]
+    ADR["component:adr<br/>決定と .rule"]
+    PL["airesource:adr-remote-mcp<br/>照らし方の skill"]
   end
-  subgraph how["package の道：照らし方"]
-    P["plugin adr-remote-mcp の skill"] --> PKG["ai-plugins が package にする"]
-    PKG --> PIN["受け取る側の SHA を Renovate が上げる"]
+  subgraph deliver["配る"]
+    GHCR["resource:ghcr"]
+    IAC["component:infrastructure-as-code<br/>on resource:doks-cluster"]
+    API["api:adr-mcp"]
+    AIP["component:ai-plugins"]
+    REN["component:renovate-runner"]
   end
-  MCP --> R["PR のレビュー（ai-review）"]
-  MCP --> S["作業中のセッション"]
-  PIN --> R
-  PIN --> S
+  subgraph check["照らす"]
+    WF["component:workflows<br/>ai-review"]
+    SES["作業中のセッション"]
+  end
+  subgraph declare["名乗る"]
+    CI["各 repo の catalog-info.yaml<br/>tags"]
+    CAT["api:catalog-mcp"]
+  end
+  ADR -->|image| GHCR -->|digest を追う| IAC -->|動かす| API
+  PL -->|package にする| AIP --> REN
+  REN -->|skill の版を上げる| WF
+  REN -->|skill の版を上げる| SES
+  API -->|ルール| WF
+  API -->|ルール| SES
+  CI --> CAT -->|tag| WF
 ```
 
-| | image の道 | package の道 |
-| --- | --- | --- |
-| 乗るもの | 決定と `.rule` | skill（`adr-check` / `adr-review` / `ade-rule-dsl`）と接続先 |
-| merge してから待つもの | image の build、Image Updater の書き戻し、Argo CD の入れ替え | Renovate の bump（`apm install` の生成物まで同じ commit に入り、automerge される）。ai-review は [workflows](https://github.com/boykush/workflows) の `apm.yml` と各 repo の caller の2段 |
-| 待っている間に起きること | レビューもセッションも古いルールで照らす | レビューもセッションも古い手順で照らす |
+### 決める
 
-照らす側は2つで、ルールの取り方（`list_rules`）は同じ。違うのは、いつ照らし、違反をどう扱うか。
+| entity | この System での責務 |
+| --- | --- |
+| `component:adr` | 決定（MADR）と、決定が各 repo に求める形を ADE の DSL で書いたルール（`.rule`）を持つ。配る CLI の adi と一緒に image にして、GHCR へ push するまでが責務 |
+| `api:adr-mcp` | 決定とルールを配る口。repo が名乗った tag で絞って返す。読み取り専用で、認証なしで公開している（決定は元から public） |
+| `airesource:adr-remote-mcp` | `adr-mcp` への接続先と、ルールの読み方・照らし方の skill（`ade-rule-dsl` / `adr-check` / `adr-review`）を束ねた plugin |
 
-| | PR のレビュー | 作業中のセッション |
+### 配る
+
+| entity | この System での責務 |
+| --- | --- |
+| `resource:ghcr` | adr の image の置き場 |
+| `component:infrastructure-as-code` | `adr-mcp` を cluster で動かし、公開する。Image Updater（`resource:image-updater-app`）が GHCR の新しい digest を main に書き戻し、Argo CD が入れ替える |
+| `resource:doks-cluster` | `adr-mcp` が動く場所。夜間は node を落とすので、その間 `adr-mcp` は止まる |
+| `resource:cloudflare-tunnel` | `adr-mcp` を外へ出す唯一の経路 |
+| `component:ai-plugins` | plugin `adr-remote-mcp` を apm の package にして、各 repo へ配る |
+| `component:renovate-runner` | 各 repo が固定した ai-plugins と workflows の版を上げ、新しい照らし方を届ける |
+
+### 照らす
+
+| entity | この System での責務 |
+| --- | --- |
+| `component:workflows` | reusable workflow の ai-review を持つ。PR を `adr-mcp` のルールに照らし、違反が無ければ承認し、あれば変更を求める。`adr-mcp` に繋がらなければ、ルールを読まずに通さないよう失敗する |
+| `resource:claude-github-app` | ai-review の判定を出す主体（claude[bot]） |
+| `resource:aws-parameter-store` | ai-review が動かす Claude Code の token の置き場 |
+| `component:github-management` | public repo に PR 必須の ruleset を張る。ai-review の承認が merge の条件として効くのはこのため |
+| 作業中のセッション | ai-review の無い repo（private を含む）では、エージェントが push の前に `adr-check` の手順で自分の変更を照らす |
+
+### 名乗る
+
+| entity | この System での責務 |
+| --- | --- |
+| 各 repo の `catalog-info.yaml` | Component の `metadata.tags` で、その repo が何であるか（書かれている言語など）を名乗る。tag の付いた決定は、同じ tag を名乗った repo にだけ届く |
+| `api:catalog-mcp` | `component:backstage-app` が出す catalog の口。ai-review はここから PR の repo の tag を読み、`adr-mcp` に渡す |
+
+## 変更が届くまで
+
+直したものは2本の道のどちらかで届き、効くまでに待つものが違う。
+
+| | ルールと決定 | 照らし方 |
 | --- | --- | --- |
-| どこで | ai-review を入れた repo の PR | ai-review の無い repo（private を含む） |
-| いつ | PR が開いた・push されたとき | 作業を終えて push する前 |
-| 違反があったら | Claude GitHub App が変更を求める。無ければ承認する | セッションが直す。破らないと成り立たないなら人に言う |
+| 乗るもの | `decisions/` の決定と `.rule` | plugin の skill と接続先 |
+| 道 | image を作り直し、Image Updater が書き戻し、Argo CD が入れ替える | ai-plugins の package を、Renovate が各 repo の固定ごと上げる（`apm install` の生成物まで同じ commit に入り、automerge される）。ai-review は workflows の `apm.yml` と各 repo の caller の2段 |
+| 待っている間 | レビューもセッションも古いルールで照らす | レビューもセッションも古い手順で照らす |
+
+夜間に ai-review が失敗するのは、`adr-mcp` を載せた cluster が止まっているため（[node-pool-park](https://github.com/boykush/infrastructure-as-code/blob/main/.github/workflows/node-pool-park.yml)）。朝に re-run するか、待てないなら owner が bypass で merge する。
 
 ## 何かを変えたいとき
 
 | 変えたいこと | 持ち主 |
 | --- | --- |
-| 決定を足す・選び直す | この repo の skill `write-adr` |
-| 決定にルールを付ける | この repo の skill `write-ade-rule` |
-| repo が名乗る tag | その repo の `catalog-info.yaml` の Component |
+| 決定を足す・選び直す | boykush/adr の skill `write-adr` |
+| 決定にルールを付ける | boykush/adr の skill `write-ade-rule` |
+| repo が名乗る tag | その repo の `catalog-info.yaml` の Component（語の決まりは [README のタグ](https://github.com/boykush/adr#タグ)） |
 | ある repo に PR のレビューを入れる | [workflows の README](https://github.com/boykush/workflows#ai-review) |
-| サーバーの動く場所と公開ホスト名 | infrastructure-as-code の `applications/remote-mcp-server/adr/` |
-| 原則そのものを選び直す | 新しい決定として、この repo に ADR を書く |
+| `adr-mcp` の動く場所と公開ホスト名 | infrastructure-as-code の `applications/remote-mcp-server/adr/` |
