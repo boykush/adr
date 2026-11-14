@@ -2,11 +2,7 @@
 
 `boykush` owner のリポジトリに横断して適用する、設計上の決定（ADR）を置くリポジトリ。
 
-## 目的
-
-リポジトリをまたいで繰り返し現れる決定を、リポジトリごとに決め直さず、ここで一度だけ決めて理由とともに残す。
-
-決定は各リポジトリへ複製しない。各リポジトリが守るのは決定のルールで、remote MCP でここから引いて変更と照合する。照合するのは、ai-review（[boykush/workflows](https://github.com/boykush/workflows)）を入れたリポジトリでは PR のレビュー、それ以外では push する前の作業中のセッション。決定の中身は、ルールの理由を知りたいときに読む。参照先が一つなので、決め直しもここを変えるだけで全リポジトリに届く。
+リポジトリをまたいで繰り返し現れる問いを、リポジトリごとに決め直さず、ここで一度だけ決めて理由とともに残す。決定はルールとして各リポジトリの変更に届けられ、PR のレビューや作業中のセッションがそれに照らす。その仕組み——何をもたらし、どんな役割の組み合わせで動くか——は、他のリポジトリにまたがるので [docs/index.md](docs/index.md)（Backstage では System `adr` の Docs）に書いてある。この README は、このリポジトリそのものを扱う。
 
 ## 対象
 
@@ -14,49 +10,28 @@
 - **置かない**: 1つのリポジトリに閉じる決定。そのリポジトリに置く
 - **置かない**: 決定の適用。設定やファイルの配布・強制は github-management や各リポジトリが担い、ここは何をなぜ決めたかを持つ
 
-## 記録の仕方
+## 置いてあるもの
 
-[MADR](https://adr.github.io/madr/) 4.0.0 で記録する。1決定1枚、`decisions/NNNN-title-with-dashes.md`。id はファイル名の数字、タイトルは `#` 見出し、status は frontmatter。他の節は MADR のテンプレートに従うが、Confirmation は書かない。守られているかを確かめる基準は、次に述べるルールが持つ。
+| パス | 中身 | 書き方 |
+| --- | --- | --- |
+| `decisions/NNNN-*.md` | 決定。[MADR](https://adr.github.io/madr/) で1決定1枚 | skill `write-adr` |
+| `decisions/NNNN-*.rule` | 決定が各リポジトリに求める形を、[ADE](https://github.com/phi42/ad-enforcement-tool) の DSL で書いたルール | skill `write-ade-rule` |
+| `adi/` | 決定とルールを MCP で配る CLI | 下の「adi」 |
+| `plugins/adr-remote-mcp/` | 配る MCP サーバーへの参照と、ルールに照らす skill を束ねた plugin | [plugin の README](plugins/adr-remote-mcp/README.md) |
 
-決定は選択肢の粒度で書き、選んだ選択肢の中の How は書かない。各リポジトリが満たす形はルールが、実装の手順は実装するリポジトリが持つので、How が変わっても決定は直さない。決定が変わるのは選び直すときで、そのときは新しい決定で置き換える。書き方と、書いた決定に手を入れてよい線は skill `write-adr` が持つ。
-
-### ルール
-
-決定とは別に、各リポジトリのセッションが守ることを [ADE](https://github.com/phi42/ad-enforcement-tool) の DSL へ変換したものをルールと呼び、`NNNN-title.rule` として決定と同じ名前で隣に置く。決定はなぜを残し、ルールは何を満たせばよいかだけを言う。効くのは accepted の決定のルールだけ。DSL は ADE のものを使い、独自には作らない。
-
-DSL は散文と違って主語を要求しない——`path "**/CLAUDE.md"` は、それを読んだセッションが作業しているリポジトリについての言明になる。決定の散文はリポジトリを名指さないと語れないので、各リポジトリが何を守るかはルールでしか書けない。
-
-`ade verify` などの実行系は導入しない。守られているかは、ai-review を入れたリポジトリでは PR のレビューが、それ以外では push する前のセッションが、差分をルールに照らして確かめる。
-
-ルールにできるのは、決定のうち ADE の DSL で書ける部分だけ。DSL が対象にするのは、構造として現れる決定と、明示的な禁止や要求を述べる決定で、手順やガイドラインの決定は対象外になる。利用側のリポジトリが守るのはルールだけで、決定はルールの理由を知りたいときに読むもの。ルールを持たない決定も、決定のうちルールに書かなかった部分も、利用側を縛らない。
-
-#### 読み書き
-
-DSL の reference は、ルールを読む側にも書く側にも要る。それを持つ skill `ade-rule-dsl` は、この repo の plugin [`plugins/adr-remote-mcp`](plugins/adr-remote-mcp) が MCP サーバーへの参照と一緒に配る。ルールを受け取るリポジトリには、読むための文法も同じ依存で届く。plugin は [Agent Plugins](https://agent-plugins.org/specification) の形で書き、apm の package にするのは [ai-plugins](https://github.com/boykush/ai-plugins) の仕事。この repo は ai-plugins を通さず、`apm.yml` から plugin の skill を直接受け取る。
-
-書き方は skill `write-ade-rule` が持つ。決定との対応やパスの基準といった、この repo だけの取り決めなので plugin には入れず、`.apm/skills/` に置く。文法は reference を分けず、`ade-rule-dsl` のものを読む。書いたら `mise run rules` で ADE の parser（`dsl.Validate`）に通す。中身は `tools/ruledsl` で、CI も同じ task を回す。確かめるのは DSL として読めることだけで、ルールが満たされているかは見ない。
-
-reference は ADE の `dsl/dsl-reference.md` を、Apache-2.0 の LICENSE と一緒に写したもの。上流を指すだけにしないのは、Codex の sandbox のようにネットワークに出られないセッションでも読めるようにするため。版は go.mod が要求する ADE、つまり `mise run rules` が通す parser の版に揃え、plugin が配る reference がその版のものかを `go test` が確かめる。ADE を上げたら書き直して `apm install` する。
-
-```sh
-go run ./tools/ruledsl vendor plugins/adr-remote-mcp/skills/ade-rule-dsl/references
-```
+決定は「なぜそう選んだか」を、ルールは「何を満たせばよいか」だけを持ち、各リポジトリを縛るのはルールだけ。決定の散文はリポジトリを名指さないと語れないが、DSL は主語を取らず、読んだセッションが作業しているリポジトリについての言明になるので、各リポジトリが何を守るかはルールでしか書けない。DSL は ADE のものを使い、独自には作らない。
 
 ### タグ
 
-frontmatter の `tags` に語を並べると、その決定とルールは、同じ語のどれかを宣言したリポジトリにだけ配られる。tags の無い決定とルールは、どのリポジトリにも配られる。tag を宣言しないリポジトリには、tags の無いものだけが届く。宣言のしかたは [MCP の面](#mcp-の面) に書く。
+frontmatter の `tags` に語を並べると、その決定とルールは、同じ語のどれかを名乗ったリポジトリにだけ届く。tags の無い決定とルールは、どのリポジトリにも届く。
 
-MADR に標準の欄は無いので、adr org の [ADG](https://github.com/adr/ad-guidance-tool) が決定の frontmatter に持つ `tags` に揃えた。MADR 本家がカテゴリに使うサブフォルダでは分けない。1つの決定が1つのカテゴリにしか入らず、`ADR-NNNN` の番号もリポジトリの中で一意でなくなるため。
+ルールのパスでは「Go のリポジトリなら」のような性質を言えないので、その条件を tag としてルールの外で持つ。語は、決定の話題ではなく、リポジトリの性質で立てる。名乗るのはリポジトリの側で、自分について言えることしか名乗れないため。最初の軸は、リポジトリが書かれている言語（`go`）。リポジトリがどの語に当てはまるかは、そのリポジトリの `catalog-info.yaml` にある Component の `metadata.tags` に書く。
 
-語は、決定の話題ではなく、リポジトリの性質で立てる。宣言するのはリポジトリの側で、自分について言えることしか宣言できないため。最初の軸は、リポジトリが書かれている言語（`go`）。
+`tags` は adr org の [ADG](https://github.com/adr/ad-guidance-tool) が決定の frontmatter に持つ欄に揃えた（MADR に標準の欄は無い）。MADR 本家がカテゴリに使うサブフォルダでは分けない。1つの決定が1つのカテゴリにしか入らず、`ADR-NNNN` の番号もリポジトリの中で一意でなくなるため。
 
-リポジトリがどの語に当てはまるかは、[github-management](https://github.com/boykush/github-management) の catalog で、そのリポジトリの Component の `metadata.tags` に書く。リポジトリが何であるかを1箇所に置き、宣言はそこから運ぶ。
+## adi
 
-## 配る道具
-
-`adi`（Architectural Decision Injection）。`adi/` にある。
-
-決定とルールを読んで MCP で配るだけの CLI で、コマンドは `adi mcp` ひとつ。読む側はエージェントなので、人間向けの面は持たない。決定そのものを読むなら `decisions/` を直接開く。
+`adi`（Architectural Decision Injection）は、決定とルールを読んで MCP で配るだけの CLI。読む側はエージェントなので、人間向けの面は持たない。決定そのものを読むなら `decisions/` を直接開く。
 
 ```sh
 mise install
@@ -65,48 +40,6 @@ adi mcp --model decisions            # stdio
 adi mcp --model decisions --http 127.0.0.1:8080
 ```
 
-決定は実行ファイルに埋め込まず `--model` で読む。後でこの道具を別リポジトリへ切り出せる余地を残すため。
+tool・名乗り方・トレースの設定は `adi mcp --help` が、image の作り方は `Dockerfile` と `.github/workflows/adr-mcp-server-image.yml` が持つ。
 
-### MCP の面
-
-利用側が引くのは `list_rules`。ai-review を入れたリポジトリでは、PR のレビューが変更を求めたときにそのルールを引いて直し、それ以外では作業を終えて push する前に引いて変更と照合する。始めに引かないのは、作業に関わらないルールまでセッションに載ってノイズになるため。`list_decisions` と `get_decision` は、ルールの理由を知りたいときに使う。
-
-照らし方は MCP の面では語らず、plugin `adr-remote-mcp` の skill（`adr-check` / `adr-review`）が持つ。2つの違いは [plugin の README](plugins/adr-remote-mcp/README.md#adr-check-と-adr-review) に書いてある。handshake の instructions は、いつ照らすかと、どの skill に従うかだけを言う。
-
-| tool | 返すもの |
-| --- | --- |
-| `list_rules` | accepted な決定の `.rule`。利用側が宣言した tag のどれかを持つ決定と tags の無い決定のものに絞る |
-| `list_decisions` | 決定の id・title・status・tags。`list_rules` と同じく、利用側が宣言した tag のどれかを持つ決定と tags の無い決定に絞る |
-| `get_decision` | 決定の本文と tags。ルールは含めない |
-
-利用側は、自分に当てはまる [tag](#タグ) をカンマ区切りで宣言する。HTTP ではリクエストの `Adi-Tags` header に、stdio では環境変数 `ADI_TAGS` に書く。HTTP のサーバーは1つで全リポジトリに答えるので、宣言はリクエストごとに運び、サーバー自身の環境変数は見ない。
-
-`list_rules` も絞るのは、パスでは「Go のリポジトリなら」のようなリポジトリの性質を言えないため。tag の付いた決定のルールは、それを宣言したリポジトリにだけ届けて、性質の条件をルールの外で持つ。`get_decision` は絞らず、id で指された決定をそのまま返す。
-
-PR のレビューでは、ai-review（[boykush/workflows](https://github.com/boykush/workflows)）が catalog からレビューするリポジトリの tag を読み、`Adi-Tags` として宣言する。リポジトリの側に書くものは無い。
-
-手元のセッションで、apm で `adr` サーバーを受け取るリポジトリが宣言するときは、自分の `apm.yml` の `dependencies.mcp` に `adr` を `headers` 付きで宣言し直す。apm は同じ名前のサーバーを root の宣言を優先して1つにするので、package の宣言が置き換わる。値は `${VAR}` にせず直接書く。apm は `${VAR}` を install 時に解決して生成物へ焼き込むので、宣言の出どころが install した環境になる。
-
-**書き込みの面は出さない。** 認証も TLS も持たないサーバーを前段越しに公開するので、エージェントは読めるが状態を変えられない形を守る。`.rule` はパースも実行もせず、テキストとして渡すだけ。
-
-ADG の MCP が持つ `get_dsl_reference` と `validate_rule` は持たない。reference は読む側にも要るが、MCP サーバーへの参照と同じ plugin が skill として届けるので、MCP の面には足さない。handshake の instructions がその skill を指す。`validate_rule` の役は、ルールを書くこの repo の `mise run rules` が持つ（[読み書き](#読み書き)）。
-
-## 配布
-
-[wiki](https://github.com/boykush/wiki) と同じく remote MCP サーバーとして配る。
-
-- このリポジトリの責務は、`adi` と決定・`.rule` を同梱した image を GHCR へ公開するまで
-- Kubernetes の manifest は置かない。infrastructure-as-code の `applications/remote-mcp-server/` に wiki と並べて載せる
-- image は `ghcr.io/boykush/adr-mcp-server`。`.github/workflows/adr-mcp-server-image.yml` が main への push で `main` と `<commit 7桁>` の2つの tag を push する
-- ENTRYPOINT は `adi mcp --model decisions --http`。呼び出し側が渡すのは listen アドレスだけ（既定 `0.0.0.0:8080`）
-- トレースは OpenTelemetry の標準の環境変数で有効にする。`OTEL_EXPORTER_OTLP_ENDPOINT`（または `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`）があれば、MCP のリクエストごとの span を OTLP/HTTP で送る。無ければ何も送らない。span の名前と属性は OpenTelemetry の [MCP の semantic conventions](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/mcp.md) に従い、service 名は `OTEL_SERVICE_NAME` から取る。span にはリポジトリが宣言した tag（`adi.tags`）も載る。tool の引数（`gen_ai.tool.call.arguments`）とエラーの文面（status の description）は、`OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true` のときだけ載る。conventions が引数を opt-in にしていて、エラーの文面はその引数を引用するため
-
-## 展望
-
-- [x] 決定を配る MCP サーバーを自作する（[#6](https://github.com/boykush/adr/issues/6)）
-- [x] `adi` と決定を同梱した image（`ghcr.io/boykush/adr-mcp-server`）を GHCR へ公開する workflow を置く
-- [x] infrastructure-as-code の remote-mcp-server に載せる
-- [x] レビュー CI から remote MCP を引いて、ルールに照らして差分を見る（[boykush/workflows](https://github.com/boykush/workflows) の ai-review。入れるかはリポジトリごと）
-- [ ] dotfiles のグローバル設定から参照させる
-- [x] [tag](#タグ) の軸を決め、関わるリポジトリが限られる決定に付ける
-- [x] 各リポジトリに当てはまる [tag](#タグ) を catalog に書き、ai-review がそこから宣言する
+adr org の ADG の MCP が持つ `get_dsl_reference` と `validate_rule` は持たない。DSL の reference は plugin が skill として MCP サーバーへの参照と一緒に届け、ルールの検査は書く側の `mise run rules` が担う。

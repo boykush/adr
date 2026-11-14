@@ -19,11 +19,11 @@ type stdioEnv struct {
 	Tags string `env:"ADI_TAGS"`
 }
 
-// registerTools wires the read surface. There is no writing tool. Both listings
-// narrow by the tags the repository declares: an untagged decision and its rule
-// reach every repository, and a tagged one reaches only those declaring one of
-// its tags. A decision asked for by id is one the session wants whatever its
-// tags.
+// registerTools wires the read surface. There is no writing tool: the server is
+// published without authentication. Both listings narrow by the tags the
+// repository declares: an untagged decision and its rule reach every repository,
+// a tagged one only those declaring one of its tags. A decision asked for by id
+// is one the session wants whatever its tags.
 func (s *Server) registerTools(srv *mcpsdk.Server) {
 	mcpsdk.AddTool(srv, &mcpsdk.Tool{
 		Name:        "list_rules",

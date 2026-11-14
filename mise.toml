@@ -43,7 +43,7 @@ run = 'go build -o "{{config_root}}/.tools/bin/adi" ./adi'
 description = "Run tests with the race detector"
 run = "go test -race ./..."
 
-# ルールは実行しない（README の「ルール」）。見るのは ADE の parser が読めるかだけ。
+# ルールは実行しない（skill write-ade-rule の「確かめる」）。見るのは ADE の parser が読めるかだけ。
 [tasks.rules]
 description = "Check the .rule files parse as ADE's rule DSL"
 run = "go run ./tools/ruledsl validate decisions"
