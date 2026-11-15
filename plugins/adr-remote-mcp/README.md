@@ -43,7 +43,7 @@ go run ./tools/ruledsl vendor plugins/adr-remote-mcp/.apm/skills/ade-rule-dsl/re
 
 ## 使う
 
-apm で、この repo のこの package に tag の SHA で依存する。版は `apm.yml` の `version` が持ち、main に入ると `adr-remote-mcp--v<version>` の tag が打たれる（boykush/workflows の `apm-plugins.yml`）。中身を変えるときは `version` も上げる。
+apm で、この repo のこの package に tag の SHA で依存する。版は `apm.yml` の `version` が持つ。中身を変えるときは `version` も上げ、main に入ったら `adr-remote-mcp--v<version>` の tag を手で打つ（`git tag adr-remote-mcp--v<version> && git push origin adr-remote-mcp--v<version>`）。consumer の Renovate はこの tag を追う。
 
 ```yaml
 dependencies:
