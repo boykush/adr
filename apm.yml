@@ -10,8 +10,8 @@ includes: auto
 # どれも直接は書き換えない。
 dependencies:
   apm:
-    - boykush/ai-plugins/plugins/wiki-remote-mcp#c52bdab0bca94a70d93513cfaab01da68ce2a672
-    - boykush/ai-plugins/plugins/catalog-remote-mcp#c52bdab0bca94a70d93513cfaab01da68ce2a672
+    - boykush/ai-plugins/plugins/wiki-remote-mcp#5518ec1a150de97886e2eec3c34326773981a052
+    - boykush/ai-plugins/plugins/catalog-remote-mcp#5518ec1a150de97886e2eec3c34326773981a052
     # この repo が配る plugin を、ai-plugins を通さずに受け取る。通すと skill を直すたびに
     # ai-plugins とこの repo の固定を往復で上げることになる。plugin の root を指さないのは、
     # apm が Agent Plugins の形を Claude と Codex へは展開しないため。
