@@ -90,7 +90,7 @@ metadata:
   name: ade-rule-dsl
   description: ルールが書かれている ADE の DSL の reference
   annotations:
-    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/.apm/skills/ade-rule-dsl/
+    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/skills/ade-rule-dsl/
 spec:
   type: skill
   lifecycle: production
@@ -103,7 +103,7 @@ metadata:
   name: adr-check
   description: 作業した変更をルールに照らす手順
   annotations:
-    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/.apm/skills/adr-check/
+    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/skills/adr-check/
 spec:
   type: skill
   lifecycle: production
@@ -116,7 +116,7 @@ metadata:
   name: adr-review
   description: PR をルールに照らして判定する手順
   annotations:
-    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/.apm/skills/adr-review/
+    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/skills/adr-review/
 spec:
   type: skill
   lifecycle: production

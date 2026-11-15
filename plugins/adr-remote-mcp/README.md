@@ -19,12 +19,12 @@
 
 ### skill の reference
 
-`.apm/skills/ade-rule-dsl/references/` の `dsl-reference.md` と `LICENSE` は、ADE の `dsl/dsl-reference.md` と LICENSE（Apache-2.0）を写したもの。上流を指すだけにしないのは、Codex の sandbox のようにネットワークに出られないセッションでも読めるようにするため。
+`skills/ade-rule-dsl/references/` の `dsl-reference.md` と `LICENSE` は、ADE の `dsl/dsl-reference.md` と LICENSE（Apache-2.0）を写したもの。上流を指すだけにしないのは、Codex の sandbox のようにネットワークに出られないセッションでも読めるようにするため。
 
 手では直さず、`tools/ruledsl` が書く。版は go.mod が要求する ADE、つまり `mise run rules` が通す parser の版に揃い、それを `go test` が確かめる。ADE を上げて `go test` が落ちたら、書き直してから `apm install` する（この repo も同じ skill を受け取っているため）。
 
 ```sh
-go run ./tools/ruledsl vendor plugins/adr-remote-mcp/.apm/skills/ade-rule-dsl/references
+go run ./tools/ruledsl vendor plugins/adr-remote-mcp/skills/ade-rule-dsl/references
 ```
 
 ### adr-check と adr-review
