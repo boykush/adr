@@ -11,7 +11,7 @@ import (
 
 // The plugin's copy is the one every consumer is handed, so it is the one to
 // hold to go.mod.
-const skillReferences = "../../plugins/adr-remote-mcp/skills/ade-rule-dsl/references"
+const skillReferences = "../../plugins/adr-remote-mcp/.apm/skills/ade-rule-dsl/references"
 
 // TestSkillCarriesWhatVendorWrites fails once go.mod moves ADE to a version
 // the ade-rule-dsl skill's reference was not taken from.

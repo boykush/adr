@@ -52,7 +52,7 @@ metadata:
     boykush/adr の決定を読む remote MCP サーバー。読み取り専用・無認証。公開エンドポイントは
     infrastructure-as-code が持つ
   links:
-    - url: https://github.com/boykush/adr/blob/main/plugins/adr-remote-mcp/mcp.json
+    - url: https://github.com/boykush/adr/blob/main/plugins/adr-remote-mcp/apm.yml
       title: 接続先の持ち主（plugin adr-remote-mcp）
       icon: github
 spec:
@@ -69,8 +69,7 @@ kind: AiResource
 metadata:
   name: adr-remote-mcp
   description: >-
-    adr-mcp への参照と、決定のルールを読み・照らす skill を束ねた plugin（Agent Plugins の形）。apm の
-    package にして配るのは ai-plugins
+    adr-mcp への参照と、決定のルールを読み・照らす skill を束ねた plugin（apm の package）
   links:
     - url: https://backstage.boykush.com/catalog/default/api/adr-mcp
       title: MCP サーバー（adr-mcp）
@@ -91,7 +90,7 @@ metadata:
   name: ade-rule-dsl
   description: ルールが書かれている ADE の DSL の reference
   annotations:
-    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/skills/ade-rule-dsl/
+    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/.apm/skills/ade-rule-dsl/
 spec:
   type: skill
   lifecycle: production
@@ -104,7 +103,7 @@ metadata:
   name: adr-check
   description: 作業した変更をルールに照らす手順
   annotations:
-    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/skills/adr-check/
+    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/.apm/skills/adr-check/
 spec:
   type: skill
   lifecycle: production
@@ -117,7 +116,7 @@ metadata:
   name: adr-review
   description: PR をルールに照らして判定する手順
   annotations:
-    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/skills/adr-review/
+    backstage.io/source-location: url:https://github.com/boykush/adr/tree/main/plugins/adr-remote-mcp/.apm/skills/adr-review/
 spec:
   type: skill
   lifecycle: production

@@ -3,8 +3,8 @@ apm_version: 0.35.1
 dependencies:
 - repo_url: _local/adr-remote-mcp
   name: adr-remote-mcp
-  version: 0.1.0
-  package_type: skill_bundle
+  version: 0.1.1
+  package_type: apm_package
   deployed_files:
   - .agents/skills/ade-rule-dsl
   - .agents/skills/ade-rule-dsl/SKILL.md
@@ -35,7 +35,7 @@ dependencies:
     .claude/skills/adr-review/SKILL.md: sha256:7db35c60c4f6922baaf1118445ef6282dc4ed01454ea1ebab4ef6f358790eb67
   source: local
   local_path: ./plugins/adr-remote-mcp
-  content_hash: sha256:59c0853c4fef2ad5971b2a653cf2bdd9cab710a64827cd97f23b4d73c0e9dc20
+  content_hash: sha256:6066a05910b07557e5c3e28143f70bd0909a5960064481489bde2c06fcd0fd61
 - repo_url: boykush/ai-plugins
   name: catalog-remote-mcp
   host: github.com

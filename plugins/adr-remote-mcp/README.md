@@ -1,30 +1,30 @@
 # adr-remote-mcp
 
-この repo の決定を引くための remote MCP サーバーへの参照と、決定が持つルールを読み、照らすための skill を持つ plugin。[Agent Plugins](https://agent-plugins.org/specification) の形で書く。名前の `remote` は、手元で adi を立てる経路と区別するため。
+この repo の決定を引くための remote MCP サーバーへの参照と、決定が持つルールを読み、照らすための skill を持つ apm の package。名前の `remote` は、手元で adi を立てる経路と区別するため。
 
 サーバー名は `adr`。tool は `mcp__adr__*` として見える。wiki 側が `scraps`（サーバーを提供するツールの名前）なのに対してこちらを `adr` にしたのは、plugin 名と hostname と揃えたかったから——ツール名で揃えるなら `adi` になる。
 
 ## 配る中身
 
-- `mcp.json`: `adr` サーバーへの参照
+- `apm.yml`: `adr` サーバーへの参照と、この package の版
 - skill `ade-rule-dsl`。ルールは [ADE](https://github.com/phi42/ad-enforcement-tool) の DSL で書かれていて、`list_rules` は書かれたままを返す。それを読むための DSL の reference を、サーバーと同じ plugin で届ける
 - skill `adr-check` と `adr-review`。変更をルールに照らす手順（[次の節](#adr-check-と-adr-review)）
 
 サーバーの実体は2つの repo に分かれている。
 
 - **image** はこの repo の CI が `ghcr.io/boykush/adr-mcp-server` へ push する。adi に、決定と `.rule` を同梱したもの。したがって引ける内容は **main に push 済みのもの**
-- **動く場所と hostname** は [infrastructure-as-code](https://github.com/boykush/infrastructure-as-code) の `applications/remote-mcp-server/adr/`。URL が変わるならここが先に変わり、`mcp.json` が後を追う
+- **動く場所と hostname** は [infrastructure-as-code](https://github.com/boykush/infrastructure-as-code) の `applications/remote-mcp-server/adr/`。URL が変わるならここが先に変わり、`apm.yml` が後を追う
 
 読み取り専用で、前段に認証は無い（決定は元から公開）。落ちているときは repo の `decisions/` を直接読む。
 
 ### skill の reference
 
-`skills/ade-rule-dsl/references/` の `dsl-reference.md` と `LICENSE` は、ADE の `dsl/dsl-reference.md` と LICENSE（Apache-2.0）を写したもの。上流を指すだけにしないのは、Codex の sandbox のようにネットワークに出られないセッションでも読めるようにするため。
+`.apm/skills/ade-rule-dsl/references/` の `dsl-reference.md` と `LICENSE` は、ADE の `dsl/dsl-reference.md` と LICENSE（Apache-2.0）を写したもの。上流を指すだけにしないのは、Codex の sandbox のようにネットワークに出られないセッションでも読めるようにするため。
 
 手では直さず、`tools/ruledsl` が書く。版は go.mod が要求する ADE、つまり `mise run rules` が通す parser の版に揃い、それを `go test` が確かめる。ADE を上げて `go test` が落ちたら、書き直してから `apm install` する（この repo も同じ skill を受け取っているため）。
 
 ```sh
-go run ./tools/ruledsl vendor plugins/adr-remote-mcp/skills/ade-rule-dsl/references
+go run ./tools/ruledsl vendor plugins/adr-remote-mcp/.apm/skills/ade-rule-dsl/references
 ```
 
 ### adr-check と adr-review
@@ -43,12 +43,12 @@ go run ./tools/ruledsl vendor plugins/adr-remote-mcp/skills/ade-rule-dsl/referen
 
 ## 使う
 
-apm で受け取るなら、[ai-plugins](https://github.com/boykush/ai-plugins) がこの plugin から作る package に依存する。apm は Agent Plugins の形を Claude と Codex へは展開しないので、その変換を ai-plugins が持つ。
+apm で、この repo のこの package に tag の SHA で依存する。版は `apm.yml` の `version` が持ち、main に入ると `adr-remote-mcp--v<version>` の tag が打たれる（boykush/workflows の `apm-plugins.yml`）。中身を変えるときは `version` も上げる。
 
 ```yaml
 dependencies:
   apm:
-    - boykush/ai-plugins/plugins/adr-remote-mcp
+    - boykush/adr/plugins/adr-remote-mcp#<SHA> # adr-remote-mcp--v<version>
 ```
 
 ```bash
