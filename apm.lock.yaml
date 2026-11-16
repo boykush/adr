@@ -1,5 +1,5 @@
 lockfile_version: '1'
-apm_version: 0.35.1
+apm_version: 0.35.0
 dependencies:
 - repo_url: _local/adr-remote-mcp
   name: adr-remote-mcp
@@ -39,8 +39,8 @@ dependencies:
 - repo_url: boykush/ai-plugins
   name: catalog-remote-mcp
   host: github.com
-  resolved_commit: e36040c30078bbe9b4f99094f45a52ada99ee076
-  resolved_ref: e36040c30078bbe9b4f99094f45a52ada99ee076
+  resolved_commit: d5ef249c42e89809747481dbf1806e04ba936d11
+  resolved_ref: d5ef249c42e89809747481dbf1806e04ba936d11
   version: 0.1.0
   virtual_path: plugins/catalog-remote-mcp
   is_virtual: true
@@ -49,8 +49,8 @@ dependencies:
 - repo_url: boykush/ai-plugins
   name: wiki-remote-mcp
   host: github.com
-  resolved_commit: e36040c30078bbe9b4f99094f45a52ada99ee076
-  resolved_ref: e36040c30078bbe9b4f99094f45a52ada99ee076
+  resolved_commit: d5ef249c42e89809747481dbf1806e04ba936d11
+  resolved_ref: d5ef249c42e89809747481dbf1806e04ba936d11
   version: 0.1.0
   virtual_path: plugins/wiki-remote-mcp
   is_virtual: true
