@@ -10,8 +10,8 @@ includes: auto
 # どれも直接は書き換えない。
 dependencies:
   apm:
-    - boykush/ai-plugins/plugins/wiki-remote-mcp#4c90082e96e8520934987afd33cf0f3767bb5daa
-    - boykush/ai-plugins/plugins/catalog-remote-mcp#4c90082e96e8520934987afd33cf0f3767bb5daa
+    - boykush/ai-plugins/plugins/wiki-remote-mcp#9bebfb8fddd8582eb06c3cb78a43bf07b6c71248
+    - boykush/ai-plugins/plugins/catalog-remote-mcp#9bebfb8fddd8582eb06c3cb78a43bf07b6c71248
     # この repo が配る plugin を、consumer と同じ package として手元から受け取る。
     - ./plugins/adr-remote-mcp
   mcp: []
