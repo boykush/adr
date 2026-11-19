@@ -39,8 +39,8 @@ dependencies:
 - repo_url: boykush/ai-plugins
   name: catalog-remote-mcp
   host: github.com
-  resolved_commit: b5087bb58421145cb6289560f31e72da53f22207
-  resolved_ref: b5087bb58421145cb6289560f31e72da53f22207
+  resolved_commit: 638ad89179ff48e0e9dd6624aacf3632037bb528
+  resolved_ref: 638ad89179ff48e0e9dd6624aacf3632037bb528
   version: 0.1.0
   virtual_path: plugins/catalog-remote-mcp
   is_virtual: true
@@ -49,8 +49,8 @@ dependencies:
 - repo_url: boykush/ai-plugins
   name: wiki-remote-mcp
   host: github.com
-  resolved_commit: b5087bb58421145cb6289560f31e72da53f22207
-  resolved_ref: b5087bb58421145cb6289560f31e72da53f22207
+  resolved_commit: 638ad89179ff48e0e9dd6624aacf3632037bb528
+  resolved_ref: 638ad89179ff48e0e9dd6624aacf3632037bb528
   version: 0.1.0
   virtual_path: plugins/wiki-remote-mcp
   is_virtual: true
