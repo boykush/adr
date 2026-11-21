@@ -43,24 +43,10 @@ go run ./tools/ruledsl vendor plugins/adr-remote-mcp/skills/ade-rule-dsl/referen
 
 ## 使う
 
-apm で受け取るなら、[ai-plugins](https://github.com/boykush/ai-plugins) がこの plugin から作る package に依存する。apm は Agent Plugins の形を Claude と Codex へは展開しないので、その変換を ai-plugins が持つ。
+Agent Plugin として、この repo のこのディレクトリを `adr-remote-mcp--v<version>` の tag で引く。版は `plugin.json` の `version` が持ち、main に入ると [boykush/workflows](https://github.com/boykush/workflows) の agent-plugins が tag を打つ。
 
-```yaml
-dependencies:
-  apm:
-    - boykush/ai-plugins/plugins/adr-remote-mcp
-```
-
-```bash
-apm install
-```
-
-Claude は `.mcp.json` と `.claude/skills/`、Codex は `.codex/config.toml` と `.agents/skills/` に入る。どれも project scope なので、リポジトリに commit すればそのリポジトリで開いた全セッションに効く。
-
-`~/.claude/settings.json` の `enabledMcpjsonServers` には `scraps` しか入っていないので、**Claude では初回に `adr` の承認プロンプトが出る**。出したくなければ [dotfiles](https://github.com/boykush/dotfiles) 側に `adr` を足す。
+隣の `apm.yml` は、apm がこの plugin を Claude と Codex へ展開するための中継ぎで、同じ workflow が `plugin.json` と `mcp.json` から書く。手では直さない。
 
 ### tag を名乗る
 
-tag の付いた決定は、同じ tag を名乗った repo にだけ届く。名乗るには、自分の `apm.yml` の `dependencies.mcp` に `adr` を `headers` 付きで宣言し直し、`Adi-Tags` に tag をカンマ区切りで書く。apm は同じ名前のサーバーを root の宣言を優先して1つにするので、package の宣言が置き換わる。
-
-値は `${VAR}` にせず直接書く。apm は `${VAR}` を install した環境で解決して生成物に焼き込むので、名乗りの出どころが install した人の環境になる。
+tag の付いた決定は、同じ tag を名乗った repo にだけ届く。名乗るには、`adr` サーバーへの接続に `Adi-Tags` header を付け、tag をカンマ区切りで書く。

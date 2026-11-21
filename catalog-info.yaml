@@ -69,8 +69,8 @@ kind: AiResource
 metadata:
   name: adr-remote-mcp
   description: >-
-    adr-mcp への参照と、決定のルールを読み・照らす skill を束ねた plugin（Agent Plugins の形）。apm の
-    package にして配るのは ai-plugins
+    adr-mcp への参照と、決定のルールを読み・照らす skill を束ねた plugin（Agent Plugins の形）。apm が
+    読む `apm.yml` を隣に生成して持つ
   links:
     - url: https://backstage.boykush.com/catalog/default/api/adr-mcp
       title: MCP サーバー（adr-mcp）
