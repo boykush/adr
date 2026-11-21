@@ -38,7 +38,8 @@ spec:
     - wiki-mcp
     - catalog-mcp
   dependsOn:
-    - component:ai-plugins
+    - component:backstage-app
+    - component:wiki
     - component:workflows
     - resource:doks-cluster
     - resource:cloudflare-tunnel
