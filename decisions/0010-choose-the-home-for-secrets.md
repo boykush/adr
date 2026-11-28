@@ -17,29 +17,25 @@ owner は User アカウントなので organization secret が無く、GitHub �
 
 ## Decision Drivers
 
-* 使う場所や共有かどうかに関わらず、保管と配り方が1つの方式で、コード（宣言）で管理できること
+* 秘密の置き場と、誰が読めるかを、コード（宣言）で管理できること
 * 1つの秘密を、CI・クラスタ・手元が同じ実体から読めること
 * 実体が1箇所で、入れ替えが1回で済み、何がどこにあるかを一覧できること
-* 誰が読めるかを宣言として列挙でき、読まれた事実を追えること
-* 追加費用がほぼ無いこと
 
 ## Considered Options
 
 * AWS Parameter Store に置き、CI は IAM OIDC、クラスタは External Secrets Operator、手元は AWS のログインで読む
-* Google Cloud Secret Manager に置き、同じ構図で読む
-* 使う場所ごとの仕組みに置く（CI は repository secret、クラスタは Kubernetes の Secret、手元は各ツールの設定）
+* GitHub の repository secret に置く（クラスタと手元は、それぞれの仕組みに別に置く）
 
 ## Decision Outcome
 
-Chosen option: "AWS Parameter Store に置き、CI は IAM OIDC、クラスタは External Secrets Operator、手元は AWS のログインで読む", because 秘密の実体は Parameter Store の1つに集まり、CI・クラスタ・手元のどれもが同じ実体を読む。置き場と、誰が読めるか（IAM の trust policy と policy）は、同じ形のコードで宣言でき、入れ替えはその1つを書き換えるだけで済む。読まれた事実は CloudTrail に残る。standard tier は保管も API 呼び出しも無料で、鍵を預ける AWS（ADR-0005）と同じアカウントに収まるので、守るアカウントも増えない。
+Chosen option: "AWS Parameter Store に置き、CI は IAM OIDC、クラスタは External Secrets Operator、手元は AWS のログインで読む", because 誰が読めるかを IAM の trust policy と policy として、置き場を parameter の名前として、どの秘密も同じ形のコードで宣言できる。値は Terraform を通さずに書けるので、state に平文が載らない。実体は Parameter Store の1つに集まり、CI・クラスタ・手元のどれもが同じ実体を読むので、入れ替えはその1つを書き換えるだけで済み、何がどこにあるかも1箇所で一覧できる。AWS は鍵を預けるために既に使っている（ADR-0005）ので、置き場のために新しいアカウントを足さない。
 
-Google Cloud も同じ構図を作れるが、`google-github-actions/auth` が認証情報ファイルを `$GITHUB_WORKSPACE` に書くので、消費側すべての `.gitignore` に1行を足すことになる。鍵を預ける AWS とは別に、守るアカウントと OIDC の信頼も1つ増える。
-
-使う場所ごとの仕組みに置くと、複数の場所が読む秘密は写しになり、入れ替えが写しの数だけ要る。repository secret は手元から読めないので、手元で使う分は別に持つしかない。置き場が場所ごとに違うので、一覧も、読めるものの宣言も1つの形にならない。
+GitHub の repository secret は、どの repo のどの workflow が読めるかを宣言する場所が無く、読めるのはその repo の workflow 全体になる。値を Terraform（`github_actions_secret`）で書けば管理はコードに寄るが、値が state に平文で載る。書き込み専用で手元から読めないので、CI と手元の両方が使う秘密は別に持つしかなく、クラスタの秘密も別の仕組みになる。置き場が repo と使う場所の数だけ分かれ、入れ替えもその数だけ要り、一覧もできない。
 
 ### Consequences
 
 * Good, because 秘密を足すときも入れ替えるときも、使う場所によらず同じ手順になる
+* Good, because 読まれた事実が CloudTrail に残る
 * Bad, because ジョブの実行中は runner の上に秘密が載る。workflow の中の悪意あるコードからは、repository secret と同じく守れない
 * Bad, because AWS のアカウントが、すべての秘密を握る一点になる
 * Bad, because 読み出しの経路が AWS に寄るので、それが壊れるとすべての消費側が同時に止まる
